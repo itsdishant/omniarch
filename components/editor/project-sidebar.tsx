@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface ProjectSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  inert?: boolean;
 }
 
 function EmptyProjectsPlaceholder({ label }: { label: string }) {
@@ -20,10 +21,11 @@ function EmptyProjectsPlaceholder({ label }: { label: string }) {
   );
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+export function ProjectSidebar({ isOpen, onClose, inert }: ProjectSidebarProps) {
   return (
     <aside
       aria-hidden={!isOpen}
+      inert={inert}
       className={cn(
         "pointer-events-none absolute inset-y-0 left-0 z-20 flex w-72 flex-col border-r border-surface-border bg-surface/95 shadow-lg transition-transform duration-200 ease-out",
         isOpen ? "translate-x-0" : "-translate-x-full",

@@ -32,7 +32,7 @@ change.
 
 - shadcn/ui is the component foundation; generated files in `components/ui/` are not modified after install. Theme mapping lives in `globals.css`.
 - Dark-only theme: tokens from `ui-context.md` are applied on `:root` and `.dark`. The document root always has the `dark` class. shadcn semantic tokens (`background`, `primary`, `card`, …) map onto those product tokens.
-- Editor chrome lives in `components/editor/`. The project sidebar is an overlay (`absolute`, slides from the left) and does not shift the canvas. Sidebar open state is owned by `EditorShell`. Feature dialogs compose `DialogPattern` later; `components/ui/dialog.tsx` stays unmodified.
+- Editor chrome lives in `components/editor/`. The project sidebar is an overlay (`absolute`, slides from the left) and does not shift the canvas. Sidebar open state is owned by `EditorShell`. When closed, the sidebar is `inert`; closing it returns focus to the navbar toggle. `DialogPattern` is controlled-only (`open` and `onOpenChange` are required). Feature dialogs compose it later; `components/ui/dialog.tsx` stays unmodified.
 
 ## Session Notes
 

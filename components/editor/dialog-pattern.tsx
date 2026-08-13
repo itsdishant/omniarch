@@ -13,8 +13,8 @@ import {
 import { cn } from "@/lib/utils";
 
 interface DialogPatternProps {
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
   footer?: ReactNode;
