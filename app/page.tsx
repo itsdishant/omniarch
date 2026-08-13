@@ -1,7 +1,9 @@
+import { EditorShell } from "@/components/editor/editor-shell";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="text-4xl font-bold">OmniArch</div>
-    </main>
+    <EditorShell>
+      <div className="h-full min-h-[calc(100vh-3rem)] bg-base" />
+    </EditorShell>
   );
 }
