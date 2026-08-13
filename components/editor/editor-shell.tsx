@@ -28,7 +28,6 @@ export function EditorShell({ children }: EditorShellProps) {
       <div className="relative min-h-0 flex-1">
         <ProjectSidebar
           isOpen={sidebarOpen}
-          inert={!sidebarOpen}
           onClose={handleSidebarClose}
         />
         {children}
