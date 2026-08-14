@@ -33,9 +33,9 @@
 
 - Every project has a single owner (Clerk user ID).
 - Projects can include additional collaborators.
-- Only authenticated users can access protected routes. `clerkMiddleware()` stays in `proxy.ts` for Clerk; auth checks live on each protected page, layout, and server function via `auth.protect()`. Sign-in and sign-up are public.
-- Only the owner or a collaborator can mutate project resources.
-- Liveblocks room tokens are issued only after verifying project membership.
+- Only authenticated users can access protected routes. `clerkMiddleware()` stays in `proxy.ts` for Clerk; auth checks live on each protected page, layout, and server function via `auth.protect()`. API routes return `401` when unauthenticated. Sign-in and sign-up are public.
+- Only the project owner can mutate a project record. Collaborators have read access and canvas access. The current project REST APIs are owner-scoped: `GET`/`POST /api/projects` and `PATCH`/`DELETE /api/projects/[projectId]`. Non-owner mutations return `403`.
+- Liveblocks room tokens are issued only after verifying project membership. `Project.id` is the Liveblocks room id. Editor home is `/editor`; opening a project uses `/editor/[projectId]`.
 
 ## Starter System Designs
 

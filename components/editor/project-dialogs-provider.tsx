@@ -3,11 +3,11 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 import {
-  useProjectDialogs,
-  type ProjectDialogsState,
-} from "@/hooks/use-project-dialogs";
+  useProjectActions,
+  type ProjectActionsState,
+} from "@/hooks/use-project-actions";
 
-const ProjectDialogsContext = createContext<ProjectDialogsState | null>(null);
+const ProjectDialogsContext = createContext<ProjectActionsState | null>(null);
 
 interface ProjectDialogsProviderProps {
   children: ReactNode;
@@ -16,7 +16,7 @@ interface ProjectDialogsProviderProps {
 export function ProjectDialogsProvider({
   children,
 }: ProjectDialogsProviderProps) {
-  const value = useProjectDialogs();
+  const value = useProjectActions();
 
   return (
     <ProjectDialogsContext.Provider value={value}>
@@ -25,7 +25,7 @@ export function ProjectDialogsProvider({
   );
 }
 
-export function useProjectDialogsContext(): ProjectDialogsState {
+export function useProjectDialogsContext(): ProjectActionsState {
   const context = useContext(ProjectDialogsContext);
 
   if (!context) {

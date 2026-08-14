@@ -6,7 +6,7 @@ import { DialogPattern } from "@/components/editor/dialog-pattern";
 import { useProjectDialogsContext } from "@/components/editor/project-dialogs-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ProjectDialogsState } from "@/hooks/use-project-dialogs";
+import type { ProjectActionsState } from "@/hooks/use-project-actions";
 
 interface DialogFooterActionsProps {
   isLoading: boolean;
@@ -59,6 +59,7 @@ interface ProjectNameDialogProps {
   confirmLabel: string;
   name: string;
   slugPreview?: string;
+  slugPreviewLabel?: string;
   autoFocus?: boolean;
   placeholder?: string;
   isLoading: boolean;
@@ -77,6 +78,7 @@ function ProjectNameDialog({
   confirmLabel,
   name,
   slugPreview,
+  slugPreviewLabel = "Room ID",
   autoFocus = false,
   placeholder,
   isLoading,
@@ -143,7 +145,7 @@ function ProjectNameDialog({
         ) : null}
         {slugPreview !== undefined ? (
           <p className="text-sm text-copy-muted">
-            Slug:{" "}
+            {slugPreviewLabel}:{" "}
             <span className="font-mono text-copy-secondary">{slugPreview}</span>
           </p>
         ) : null}
@@ -152,12 +154,12 @@ function ProjectNameDialog({
   );
 }
 
-function renderActiveDialog(state: ProjectDialogsState): ReactNode {
+function renderActiveDialog(state: ProjectActionsState): ReactNode {
   const {
     dialog,
     targetProject,
     name,
-    slug,
+    roomId,
     isNameValid,
     isLoading,
     setName,
@@ -171,12 +173,12 @@ function renderActiveDialog(state: ProjectDialogsState): ReactNode {
         <ProjectNameDialog
           open
           title="Create Project"
-          description="Choose a name. The slug updates as you type."
+          description="Choose a name. The room ID updates as you type."
           formId="create-project-form"
           inputId="create-project-name"
           confirmLabel="Create"
           name={name}
-          slugPreview={slug}
+          slugPreview={roomId}
           placeholder="Payments Platform"
           isLoading={isLoading}
           isNameValid={isNameValid}
@@ -197,7 +199,6 @@ function renderActiveDialog(state: ProjectDialogsState): ReactNode {
           inputId="rename-project-name"
           confirmLabel="Rename"
           name={name}
-          slugPreview={slug}
           autoFocus
           isLoading={isLoading}
           isNameValid={isNameValid}
