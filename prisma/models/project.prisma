@@ -5,6 +5,7 @@ enum ProjectStatus {
 
 model Project {
   id             String                 @id @default(cuid())
+  /// Clerk user ID
   ownerId        String
   name           String
   description    String?

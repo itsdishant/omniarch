@@ -6,7 +6,7 @@
 | ---------------- | ----------------------- | -------------------------------------------------------------- |
 | Framework        | Next.js 16 + TypeScript | Full-stack app with server/client boundaries                   |
 | UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
-| Auth             | Clerk                   | User identity and route protection                             |
+| Auth             | Clerk                   | User identity; `auth.protect()` on protected pages/layouts     |
 | Database         | Prisma + PostgreSQL     | Relational metadata: projects, collaborators, specs, task runs |
 | Canvas           | Liveblocks + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Trigger.dev             | Durable AI generation workflows                                |
@@ -18,7 +18,7 @@
 - `trigger` — Long-running background jobs: AI design generation and spec generation.
 - `lib` — Shared infrastructure: Prisma client, access control helpers, and utilities.
 - `components` — UI composition: canvas surfaces, sidebars, dialogs, and interactive elements.
-- `prisma` — Database schema and generated client output.
+- `prisma` — Database schema and migrations. Generated client lives in `generated/prisma`.
 - `data` — Legacy local directory. Not used for new artifacts.
 
 ## Storage Model
@@ -33,7 +33,7 @@
 
 - Every project has a single owner (Clerk user ID).
 - Projects can include additional collaborators.
-- Only authenticated users can access protected routes.
+- Only authenticated users can access protected routes. `clerkMiddleware()` stays in `proxy.ts` for Clerk; auth checks live on each protected page, layout, and server function via `auth.protect()`. Sign-in and sign-up are public.
 - Only the owner or a collaborator can mutate project resources.
 - Liveblocks room tokens are issued only after verifying project membership.
 
