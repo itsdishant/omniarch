@@ -1,3 +1,5 @@
+import { MAX_PROJECT_NAME_LENGTH } from "@/lib/project-name";
+
 export async function parseJsonBody(
   request: Request,
 ): Promise<{ ok: true; value: unknown } | { ok: false; response: Response }> {
@@ -16,8 +18,6 @@ export async function parseJsonBody(
     };
   }
 }
-
-const MAX_PROJECT_NAME_LENGTH = 120;
 
 export function readOptionalName(body: unknown): string | undefined | Response {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {

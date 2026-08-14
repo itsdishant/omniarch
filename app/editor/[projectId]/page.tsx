@@ -26,10 +26,7 @@ export default async function ProjectWorkspacePage({
   );
 
   return (
-    <EditorShell
-      ownedProjects={ownedProjects}
-      sharedProjects={sharedProjects}
-    >
+    <EditorShell ownedProjects={ownedProjects} sharedProjects={sharedProjects}>
       <div className="h-full min-h-[calc(100vh-3rem)] bg-base" />
     </EditorShell>
   );

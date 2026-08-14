@@ -7,6 +7,7 @@ import {
 } from "@/lib/parse-json-body";
 import {
   createOwnedProject,
+  isUniqueConstraintError,
   listOwnedProjects,
   toEditorProjectListItem,
 } from "@/lib/projects";
@@ -42,6 +43,17 @@ export async function POST(request: Request) {
     return id;
   }
 
-  const project = await createOwnedProject(userId, { name, id });
-  return Response.json({ project }, { status: 201 });
+  try {
+    const project = await createOwnedProject(userId, { name, id });
+    return Response.json({ project }, { status: 201 });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return Response.json(
+        { error: "Project already exists" },
+        { status: 409 },
+      );
+    }
+
+    throw error;
+  }
 }

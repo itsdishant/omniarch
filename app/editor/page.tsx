@@ -13,10 +13,7 @@ export default async function EditorPage() {
   );
 
   return (
-    <EditorShell
-      ownedProjects={ownedProjects}
-      sharedProjects={sharedProjects}
-    >
+    <EditorShell ownedProjects={ownedProjects} sharedProjects={sharedProjects}>
       <EditorHome />
     </EditorShell>
   );

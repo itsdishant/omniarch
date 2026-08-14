@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
+import { isValidProjectName } from "@/lib/project-name";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 export type ProjectDialogKind = "create" | "rename" | "delete";
@@ -14,6 +15,7 @@ export interface ProjectActionsState {
   roomId: string;
   isNameValid: boolean;
   isLoading: boolean;
+  error: string | null;
   setName: (name: string) => void;
   openCreate: () => void;
   openRename: (project: EditorProjectListItem) => void;
@@ -21,6 +23,8 @@ export interface ProjectActionsState {
   close: () => void;
   confirmActiveDialog: () => void;
 }
+
+const FALLBACK_ROOM_SLUG = "project";
 
 function slugifyProjectName(name: string): string {
   return name
@@ -32,6 +36,14 @@ function slugifyProjectName(name: string): string {
 
 function createShortSuffix(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(-16);
+}
+
+function roomIdForName(name: string, suffix: string): string {
+  if (name.trim() === "" || suffix === "") {
+    return "";
+  }
+
+  return `${slugifyProjectName(name) || FALLBACK_ROOM_SLUG}-${suffix}`;
 }
 
 function readCreatedProjectId(value: unknown): string | null {
@@ -59,19 +71,44 @@ function readCreatedProjectId(value: unknown): string | null {
   return project.id;
 }
 
+async function readApiError(response: Response): Promise<string> {
+  try {
+    const value: unknown = await response.json();
+
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      "error" in value &&
+      typeof value.error === "string" &&
+      value.error.trim() !== ""
+    ) {
+      return value.error;
+    }
+  } catch {
+    // Fall through to the generic message.
+  }
+
+  return "Something went wrong. Try again.";
+}
+
 export function useProjectActions(): ProjectActionsState {
   const router = useRouter();
   const pathname = usePathname();
   const [dialog, setDialog] = useState<ProjectDialogKind | null>(null);
   const [targetProject, setTargetProject] =
     useState<EditorProjectListItem | null>(null);
-  const [name, setName] = useState("");
+  const [name, setNameState] = useState("");
   const [suffix, setSuffix] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const slug = useMemo(() => slugifyProjectName(name), [name]);
-  const roomId = slug && suffix ? `${slug}-${suffix}` : "";
-  const isNameValid = slug.length > 0;
+  const roomId = useMemo(() => roomIdForName(name, suffix), [name, suffix]);
+  const isNameValid = isValidProjectName(name);
+
+  const setName = useCallback((nextName: string) => {
+    setError(null);
+    setNameState(nextName);
+  }, []);
 
   const close = useCallback(() => {
     if (isLoading) {
@@ -80,26 +117,30 @@ export function useProjectActions(): ProjectActionsState {
 
     setDialog(null);
     setTargetProject(null);
-    setName("");
+    setNameState("");
     setSuffix("");
+    setError(null);
   }, [isLoading]);
 
   const openCreate = useCallback(() => {
     setTargetProject(null);
-    setName("");
+    setNameState("");
     setSuffix(createShortSuffix());
+    setError(null);
     setDialog("create");
   }, []);
 
   const openRename = useCallback((project: EditorProjectListItem) => {
     setTargetProject(project);
-    setName(project.name);
+    setNameState(project.name);
     setSuffix("");
+    setError(null);
     setDialog("rename");
   }, []);
 
   const openDelete = useCallback((project: EditorProjectListItem) => {
     setTargetProject(project);
+    setError(null);
     setDialog("delete");
   }, []);
 
@@ -115,6 +156,7 @@ export function useProjectActions(): ProjectActionsState {
 
       void (async () => {
         setIsLoading(true);
+        setError(null);
 
         try {
           const response = await fetch("/api/projects", {
@@ -124,6 +166,7 @@ export function useProjectActions(): ProjectActionsState {
           });
 
           if (!response.ok) {
+            setError(await readApiError(response));
             return;
           }
 
@@ -131,14 +174,18 @@ export function useProjectActions(): ProjectActionsState {
           const projectId = readCreatedProjectId(payload);
 
           if (!projectId) {
+            setError("Something went wrong. Try again.");
             return;
           }
 
           setDialog(null);
           setTargetProject(null);
-          setName("");
+          setNameState("");
           setSuffix("");
+          setError(null);
           router.push(`/editor/${projectId}`);
+        } catch {
+          setError("Something went wrong. Try again.");
         } finally {
           setIsLoading(false);
         }
@@ -156,6 +203,7 @@ export function useProjectActions(): ProjectActionsState {
 
       void (async () => {
         setIsLoading(true);
+        setError(null);
 
         try {
           const response = await fetch(`/api/projects/${targetProject.id}`, {
@@ -165,13 +213,17 @@ export function useProjectActions(): ProjectActionsState {
           });
 
           if (!response.ok) {
+            setError(await readApiError(response));
             return;
           }
 
           setDialog(null);
           setTargetProject(null);
-          setName("");
+          setNameState("");
+          setError(null);
           router.refresh();
+        } catch {
+          setError("Something went wrong. Try again.");
         } finally {
           setIsLoading(false);
         }
@@ -190,6 +242,7 @@ export function useProjectActions(): ProjectActionsState {
 
       void (async () => {
         setIsLoading(true);
+        setError(null);
 
         try {
           const response = await fetch(`/api/projects/${deletedProjectId}`, {
@@ -197,12 +250,14 @@ export function useProjectActions(): ProjectActionsState {
           });
 
           if (!response.ok) {
+            setError(await readApiError(response));
             return;
           }
 
           setDialog(null);
           setTargetProject(null);
-          setName("");
+          setNameState("");
+          setError(null);
 
           if (isActiveWorkspace) {
             router.replace("/editor");
@@ -210,6 +265,8 @@ export function useProjectActions(): ProjectActionsState {
           }
 
           router.refresh();
+        } catch {
+          setError("Something went wrong. Try again.");
         } finally {
           setIsLoading(false);
         }
@@ -233,6 +290,7 @@ export function useProjectActions(): ProjectActionsState {
     roomId,
     isNameValid,
     isLoading,
+    error,
     setName,
     openCreate,
     openRename,

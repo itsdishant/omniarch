@@ -1,5 +1,13 @@
+import { Prisma } from "@/generated/prisma/client";
 import { ProjectStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+
+export function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002"
+  );
+}
 
 const DEFAULT_PROJECT_NAME = "Untitled Project";
 

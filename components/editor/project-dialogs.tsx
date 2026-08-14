@@ -7,6 +7,7 @@ import { useProjectDialogsContext } from "@/components/editor/project-dialogs-pr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ProjectActionsState } from "@/hooks/use-project-actions";
+import { MAX_PROJECT_NAME_LENGTH } from "@/lib/project-name";
 
 interface DialogFooterActionsProps {
   isLoading: boolean;
@@ -64,6 +65,7 @@ interface ProjectNameDialogProps {
   placeholder?: string;
   isLoading: boolean;
   isNameValid: boolean;
+  error?: string | null;
   onNameChange: (name: string) => void;
   onClose: () => void;
   onConfirm: () => void;
@@ -83,12 +85,12 @@ function ProjectNameDialog({
   placeholder,
   isLoading,
   isNameValid,
+  error = null,
   onNameChange,
   onClose,
   onConfirm,
 }: ProjectNameDialogProps) {
-  const nameIsEmpty = name.trim().length === 0;
-  const nameNeedsLettersOrNumbers = !nameIsEmpty && !isNameValid;
+  const nameIsTooLong = name.length > MAX_PROJECT_NAME_LENGTH;
 
   return (
     <DialogPattern
@@ -131,16 +133,25 @@ function ProjectNameDialog({
             autoComplete="off"
             autoFocus={autoFocus}
             disabled={isLoading}
-            aria-invalid={nameNeedsLettersOrNumbers}
+            aria-invalid={nameIsTooLong || Boolean(error)}
             aria-describedby={
-              nameNeedsLettersOrNumbers ? `${inputId}-error` : undefined
+              nameIsTooLong
+                ? `${inputId}-length-error`
+                : error
+                  ? `${inputId}-request-error`
+                  : undefined
             }
             className="text-copy-primary placeholder:text-copy-muted"
           />
         </label>
-        {nameNeedsLettersOrNumbers ? (
-          <p id={`${inputId}-error`} className="text-sm text-error">
-            Name must include letters or numbers.
+        {nameIsTooLong ? (
+          <p id={`${inputId}-length-error`} className="text-sm text-error">
+            Name must be {MAX_PROJECT_NAME_LENGTH} characters or fewer.
+          </p>
+        ) : null}
+        {error ? (
+          <p id={`${inputId}-request-error`} className="text-sm text-error">
+            {error}
           </p>
         ) : null}
         {slugPreview !== undefined ? (
@@ -162,6 +173,7 @@ function renderActiveDialog(state: ProjectActionsState): ReactNode {
     roomId,
     isNameValid,
     isLoading,
+    error,
     setName,
     close,
     confirmActiveDialog,
@@ -182,6 +194,7 @@ function renderActiveDialog(state: ProjectActionsState): ReactNode {
           placeholder="Payments Platform"
           isLoading={isLoading}
           isNameValid={isNameValid}
+          error={error}
           onNameChange={setName}
           onClose={close}
           onConfirm={confirmActiveDialog}
@@ -202,6 +215,7 @@ function renderActiveDialog(state: ProjectActionsState): ReactNode {
           autoFocus
           isLoading={isLoading}
           isNameValid={isNameValid}
+          error={error}
           onNameChange={setName}
           onClose={close}
           onConfirm={confirmActiveDialog}
@@ -231,7 +245,9 @@ function renderActiveDialog(state: ProjectActionsState): ReactNode {
               onConfirm={confirmActiveDialog}
             />
           }
-        />
+        >
+          {error ? <p className="text-sm text-error">{error}</p> : null}
+        </DialogPattern>
       );
     default:
       return null;
