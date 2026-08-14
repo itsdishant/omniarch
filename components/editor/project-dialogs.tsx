@@ -6,7 +6,8 @@ import { DialogPattern } from "@/components/editor/dialog-pattern";
 import { useProjectDialogsContext } from "@/components/editor/project-dialogs-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ProjectDialogsState } from "@/hooks/use-project-dialogs";
+import type { ProjectActionsState } from "@/hooks/use-project-actions";
+import { MAX_PROJECT_NAME_LENGTH } from "@/lib/project-name";
 
 interface DialogFooterActionsProps {
   isLoading: boolean;
@@ -59,10 +60,12 @@ interface ProjectNameDialogProps {
   confirmLabel: string;
   name: string;
   slugPreview?: string;
+  slugPreviewLabel?: string;
   autoFocus?: boolean;
   placeholder?: string;
   isLoading: boolean;
   isNameValid: boolean;
+  error?: string | null;
   onNameChange: (name: string) => void;
   onClose: () => void;
   onConfirm: () => void;
@@ -77,16 +80,17 @@ function ProjectNameDialog({
   confirmLabel,
   name,
   slugPreview,
+  slugPreviewLabel = "Room ID",
   autoFocus = false,
   placeholder,
   isLoading,
   isNameValid,
+  error = null,
   onNameChange,
   onClose,
   onConfirm,
 }: ProjectNameDialogProps) {
-  const nameIsEmpty = name.trim().length === 0;
-  const nameNeedsLettersOrNumbers = !nameIsEmpty && !isNameValid;
+  const nameIsTooLong = name.length > MAX_PROJECT_NAME_LENGTH;
 
   return (
     <DialogPattern
@@ -129,21 +133,30 @@ function ProjectNameDialog({
             autoComplete="off"
             autoFocus={autoFocus}
             disabled={isLoading}
-            aria-invalid={nameNeedsLettersOrNumbers}
+            aria-invalid={nameIsTooLong || Boolean(error)}
             aria-describedby={
-              nameNeedsLettersOrNumbers ? `${inputId}-error` : undefined
+              nameIsTooLong
+                ? `${inputId}-length-error`
+                : error
+                  ? `${inputId}-request-error`
+                  : undefined
             }
             className="text-copy-primary placeholder:text-copy-muted"
           />
         </label>
-        {nameNeedsLettersOrNumbers ? (
-          <p id={`${inputId}-error`} className="text-sm text-error">
-            Name must include letters or numbers.
+        {nameIsTooLong ? (
+          <p id={`${inputId}-length-error`} className="text-sm text-error">
+            Name must be {MAX_PROJECT_NAME_LENGTH} characters or fewer.
+          </p>
+        ) : null}
+        {error ? (
+          <p id={`${inputId}-request-error`} className="text-sm text-error">
+            {error}
           </p>
         ) : null}
         {slugPreview !== undefined ? (
           <p className="text-sm text-copy-muted">
-            Slug:{" "}
+            {slugPreviewLabel}:{" "}
             <span className="font-mono text-copy-secondary">{slugPreview}</span>
           </p>
         ) : null}
@@ -152,14 +165,15 @@ function ProjectNameDialog({
   );
 }
 
-function renderActiveDialog(state: ProjectDialogsState): ReactNode {
+function renderActiveDialog(state: ProjectActionsState): ReactNode {
   const {
     dialog,
     targetProject,
     name,
-    slug,
+    roomId,
     isNameValid,
     isLoading,
+    error,
     setName,
     close,
     confirmActiveDialog,
@@ -171,15 +185,16 @@ function renderActiveDialog(state: ProjectDialogsState): ReactNode {
         <ProjectNameDialog
           open
           title="Create Project"
-          description="Choose a name. The slug updates as you type."
+          description="Choose a name. The room ID updates as you type."
           formId="create-project-form"
           inputId="create-project-name"
           confirmLabel="Create"
           name={name}
-          slugPreview={slug}
+          slugPreview={roomId}
           placeholder="Payments Platform"
           isLoading={isLoading}
           isNameValid={isNameValid}
+          error={error}
           onNameChange={setName}
           onClose={close}
           onConfirm={confirmActiveDialog}
@@ -197,10 +212,10 @@ function renderActiveDialog(state: ProjectDialogsState): ReactNode {
           inputId="rename-project-name"
           confirmLabel="Rename"
           name={name}
-          slugPreview={slug}
           autoFocus
           isLoading={isLoading}
           isNameValid={isNameValid}
+          error={error}
           onNameChange={setName}
           onClose={close}
           onConfirm={confirmActiveDialog}
@@ -230,7 +245,9 @@ function renderActiveDialog(state: ProjectDialogsState): ReactNode {
               onConfirm={confirmActiveDialog}
             />
           }
-        />
+        >
+          {error ? <p className="text-sm text-error">{error}</p> : null}
+        </DialogPattern>
       );
     default:
       return null;

@@ -1,21 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProjectDialogsContext } from "@/components/editor/project-dialogs-provider";
-import {
-  MOCK_OWNED_PROJECTS,
-  MOCK_SHARED_PROJECTS,
-  type MockProject,
-} from "@/lib/mock-projects";
+import type { EditorProjectListItem } from "@/lib/projects";
 import { cn } from "@/lib/utils";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  ownedProjects: EditorProjectListItem[];
+  sharedProjects: EditorProjectListItem[];
 }
 
 interface EmptyProjectsPlaceholderProps {
@@ -31,7 +30,7 @@ function EmptyProjectsPlaceholder({ label }: EmptyProjectsPlaceholderProps) {
 }
 
 interface ProjectListItemProps {
-  project: MockProject;
+  project: EditorProjectListItem;
   showActions: boolean;
 }
 
@@ -40,9 +39,12 @@ function ProjectListItem({ project, showActions }: ProjectListItemProps) {
 
   return (
     <li className="flex items-center gap-1 px-2 py-1">
-      <span className="min-w-0 flex-1 truncate px-1 text-sm text-copy-primary">
+      <Link
+        href={`/editor/${encodeURIComponent(project.id)}`}
+        className="min-w-0 flex-1 truncate px-1 text-sm text-copy-primary"
+      >
         {project.name}
-      </span>
+      </Link>
       {showActions ? (
         <div className="flex shrink-0 items-center">
           <Button
@@ -70,7 +72,7 @@ function ProjectListItem({ project, showActions }: ProjectListItemProps) {
 }
 
 interface ProjectListProps {
-  projects: MockProject[];
+  projects: EditorProjectListItem[];
   emptyLabel: string;
   showActions: boolean;
 }
@@ -93,7 +95,12 @@ function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
   );
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+export function ProjectSidebar({
+  isOpen,
+  onClose,
+  ownedProjects,
+  sharedProjects,
+}: ProjectSidebarProps) {
   const { openCreate } = useProjectDialogsContext();
 
   return (
@@ -124,7 +131,10 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
           </Button>
         </div>
 
-        <Tabs defaultValue="my-projects" className="flex min-h-0 flex-1 flex-col gap-0">
+        <Tabs
+          defaultValue="my-projects"
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
           <div className="shrink-0 border-b border-surface-border px-3 py-2">
             <TabsList className="w-full">
               <TabsTrigger value="my-projects">My Projects</TabsTrigger>
@@ -135,14 +145,14 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
           <ScrollArea className="min-h-0 flex-1">
             <TabsContent value="my-projects" className="h-full">
               <ProjectList
-                projects={MOCK_OWNED_PROJECTS}
+                projects={ownedProjects}
                 emptyLabel="No projects yet"
                 showActions
               />
             </TabsContent>
             <TabsContent value="shared" className="h-full">
               <ProjectList
-                projects={MOCK_SHARED_PROJECTS}
+                projects={sharedProjects}
                 emptyLabel="No shared projects yet"
                 showActions={false}
               />
