@@ -30,7 +30,7 @@ export function readOptionalName(body: unknown): string | undefined | Response {
 
   if (
     typeof body.name !== "string" ||
-    body.name.length > MAX_PROJECT_NAME_LENGTH
+    body.name.trim().length > MAX_PROJECT_NAME_LENGTH
   ) {
     return Response.json({ error: "Invalid project name" }, { status: 400 });
   }
