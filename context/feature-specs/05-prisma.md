@@ -1,3 +1,5 @@
+# Prisma
+
 Prisma is already installed. Add the project data models, Prisma client singleton, and first migration.
 
 ## Models
@@ -13,7 +15,6 @@ Add `Project`:
 - `canvasJsonPath` for future canvas blob storage
 - timestamps
 - indexes on owner ID and creation date
-
 
 Add `ProjectCollaborator`:
 

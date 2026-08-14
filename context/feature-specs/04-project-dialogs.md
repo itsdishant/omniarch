@@ -1,3 +1,5 @@
+# Project Dialogs
+
 ## Goal
 
 Build the `/editor` home screen and add project dialogs/sidebar actions. No API calls or persistence yet.
@@ -49,6 +51,7 @@ Show actions only for owned projects.
 Hide actions for shared/collaborator projects.
 
 On mobile:
+
 - tapping outside the sidebar closes it
 - add a backdrop scrim
 

@@ -1,3 +1,5 @@
+# Auth
+
 Clerk is already installed and connected. Wire it into the Next.js app: provider, auth pages, redirects, route protection, and user menu.
 
 ## Design
@@ -6,7 +8,7 @@ Use Clerk’s `dark` theme from `@clerk/ui/themes` as the base.
 
 Override Clerk appearance variables using the app’s existing CSS variables. Do not hardcode colors.
 
-### Sign-in and sign-up pages:
+### Sign-in and sign-up pages
 
 - large screens: simple two-panel layout
 - left: compact logo, tagline, short text-only feature list
