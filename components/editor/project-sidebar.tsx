@@ -18,7 +18,11 @@ interface ProjectSidebarProps {
   onClose: () => void;
 }
 
-function EmptyProjectsPlaceholder({ label }: { label: string }) {
+interface EmptyProjectsPlaceholderProps {
+  label: string;
+}
+
+function EmptyProjectsPlaceholder({ label }: EmptyProjectsPlaceholderProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-8 text-center">
       <p className="text-sm text-copy-muted">{label}</p>
@@ -26,13 +30,12 @@ function EmptyProjectsPlaceholder({ label }: { label: string }) {
   );
 }
 
-function ProjectListItem({
-  project,
-  showActions,
-}: {
+interface ProjectListItemProps {
   project: MockProject;
   showActions: boolean;
-}) {
+}
+
+function ProjectListItem({ project, showActions }: ProjectListItemProps) {
   const { openRename, openDelete } = useProjectDialogsContext();
 
   return (
@@ -49,7 +52,7 @@ function ProjectListItem({
             aria-label={`Rename ${project.name}`}
             onClick={() => openRename(project)}
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-5 w-5" />
           </Button>
           <Button
             type="button"
@@ -58,7 +61,7 @@ function ProjectListItem({
             aria-label={`Delete ${project.name}`}
             onClick={() => openDelete(project)}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5" />
           </Button>
         </div>
       ) : null}
@@ -66,15 +69,13 @@ function ProjectListItem({
   );
 }
 
-function ProjectList({
-  projects,
-  emptyLabel,
-  showActions,
-}: {
+interface ProjectListProps {
   projects: MockProject[];
   emptyLabel: string;
   showActions: boolean;
-}) {
+}
+
+function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
   if (projects.length === 0) {
     return <EmptyProjectsPlaceholder label={emptyLabel} />;
   }
@@ -151,7 +152,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
         <div className="shrink-0 border-t border-surface-border p-3">
           <Button type="button" className="w-full" onClick={openCreate}>
-            <Plus data-icon="inline-start" className="h-4 w-4" />
+            <Plus data-icon="inline-start" className="h-5 w-5" />
             New Project
           </Button>
         </div>

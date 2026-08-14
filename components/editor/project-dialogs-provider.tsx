@@ -2,15 +2,20 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 
-import { useProjectDialogs } from "@/hooks/use-project-dialogs";
+import {
+  useProjectDialogs,
+  type ProjectDialogsState,
+} from "@/hooks/use-project-dialogs";
 
-type ProjectDialogsContextValue = ReturnType<typeof useProjectDialogs>;
+const ProjectDialogsContext = createContext<ProjectDialogsState | null>(null);
 
-const ProjectDialogsContext = createContext<ProjectDialogsContextValue | null>(
-  null,
-);
+interface ProjectDialogsProviderProps {
+  children: ReactNode;
+}
 
-export function ProjectDialogsProvider({ children }: { children: ReactNode }) {
+export function ProjectDialogsProvider({
+  children,
+}: ProjectDialogsProviderProps) {
   const value = useProjectDialogs();
 
   return (
@@ -20,7 +25,7 @@ export function ProjectDialogsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useProjectDialogsContext() {
+export function useProjectDialogsContext(): ProjectDialogsState {
   const context = useContext(ProjectDialogsContext);
 
   if (!context) {

@@ -17,7 +17,7 @@ export function EditorHome() {
         Start a new architecture workspace, or choose a project from the sidebar.
       </p>
       <Button type="button" onClick={openCreate}>
-        <Plus data-icon="inline-start" className="h-4 w-4" />
+        <Plus data-icon="inline-start" className="h-5 w-5" />
         New Project
       </Button>
     </div>
