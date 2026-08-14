@@ -1,10 +1,16 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProjectDialogsContext } from "@/components/editor/project-dialogs-provider";
+import {
+  MOCK_OWNED_PROJECTS,
+  MOCK_SHARED_PROJECTS,
+  type MockProject,
+} from "@/lib/mock-projects";
 import { cn } from "@/lib/utils";
 
 interface ProjectSidebarProps {
@@ -12,7 +18,11 @@ interface ProjectSidebarProps {
   onClose: () => void;
 }
 
-function EmptyProjectsPlaceholder({ label }: { label: string }) {
+interface EmptyProjectsPlaceholderProps {
+  label: string;
+}
+
+function EmptyProjectsPlaceholder({ label }: EmptyProjectsPlaceholderProps) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-4 py-8 text-center">
       <p className="text-sm text-copy-muted">{label}</p>
@@ -20,7 +30,72 @@ function EmptyProjectsPlaceholder({ label }: { label: string }) {
   );
 }
 
+interface ProjectListItemProps {
+  project: MockProject;
+  showActions: boolean;
+}
+
+function ProjectListItem({ project, showActions }: ProjectListItemProps) {
+  const { openRename, openDelete } = useProjectDialogsContext();
+
+  return (
+    <li className="flex items-center gap-1 px-2 py-1">
+      <span className="min-w-0 flex-1 truncate px-1 text-sm text-copy-primary">
+        {project.name}
+      </span>
+      {showActions ? (
+        <div className="flex shrink-0 items-center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Rename ${project.name}`}
+            onClick={() => openRename(project)}
+          >
+            <Pencil className="h-5 w-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Delete ${project.name}`}
+            onClick={() => openDelete(project)}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
+      ) : null}
+    </li>
+  );
+}
+
+interface ProjectListProps {
+  projects: MockProject[];
+  emptyLabel: string;
+  showActions: boolean;
+}
+
+function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
+  if (projects.length === 0) {
+    return <EmptyProjectsPlaceholder label={emptyLabel} />;
+  }
+
+  return (
+    <ul className="flex flex-col gap-0.5 py-2">
+      {projects.map((project) => (
+        <ProjectListItem
+          key={project.id}
+          project={project}
+          showActions={showActions}
+        />
+      ))}
+    </ul>
+  );
+}
+
 export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+  const { openCreate } = useProjectDialogsContext();
+
   return (
     <aside
       aria-hidden={!isOpen}
@@ -59,17 +134,25 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
           <ScrollArea className="min-h-0 flex-1">
             <TabsContent value="my-projects" className="h-full">
-              <EmptyProjectsPlaceholder label="No projects yet" />
+              <ProjectList
+                projects={MOCK_OWNED_PROJECTS}
+                emptyLabel="No projects yet"
+                showActions
+              />
             </TabsContent>
             <TabsContent value="shared" className="h-full">
-              <EmptyProjectsPlaceholder label="No shared projects yet" />
+              <ProjectList
+                projects={MOCK_SHARED_PROJECTS}
+                emptyLabel="No shared projects yet"
+                showActions={false}
+              />
             </TabsContent>
           </ScrollArea>
         </Tabs>
 
         <div className="shrink-0 border-t border-surface-border p-3">
-          <Button type="button" className="w-full">
-            <Plus data-icon="inline-start" className="h-4 w-4" />
+          <Button type="button" className="w-full" onClick={openCreate}>
+            <Plus data-icon="inline-start" className="h-5 w-5" />
             New Project
           </Button>
         </div>
