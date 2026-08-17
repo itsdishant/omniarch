@@ -126,6 +126,14 @@ export function useShareDialog({
   const copiedTimeoutRef = useRef<number | null>(null);
   const resolvedCanManage = loadedCanManage ?? canManage;
 
+  // Track the projectId at the time each mutation starts to prevent
+  // cross-project state corruption when requests complete out of order.
+  const activeProjectIdRef = useRef<string | undefined>(projectId);
+
+  useEffect(() => {
+    activeProjectIdRef.current = projectId;
+  }, [projectId]);
+
   function clearCopiedTimeout() {
     if (copiedTimeoutRef.current !== null) {
       window.clearTimeout(copiedTimeoutRef.current);
@@ -232,6 +240,9 @@ export function useShareDialog({
       return;
     }
 
+    // Capture the projectId at mutation start to verify it hasn't changed on completion.
+    const mutationProjectId = projectId;
+
     setIsInviting(true);
     setError(null);
 
@@ -258,12 +269,19 @@ export function useShareDialog({
         return;
       }
 
-      setCollaborators((current) => [...current, collaborator]);
-      setEmail("");
+      // Only update state if we're still on the same project.
+      if (activeProjectIdRef.current === mutationProjectId) {
+        setCollaborators((current) => [...current, collaborator]);
+        setEmail("");
+      }
     } catch {
-      setError("Something went wrong. Try again.");
+      if (activeProjectIdRef.current === mutationProjectId) {
+        setError("Something went wrong. Try again.");
+      }
     } finally {
-      setIsInviting(false);
+      if (activeProjectIdRef.current === mutationProjectId) {
+        setIsInviting(false);
+      }
     }
   }, [resolvedCanManage, email, isInviting, projectId]);
 
@@ -272,6 +290,9 @@ export function useShareDialog({
       if (!resolvedCanManage || !projectId || removingId) {
         return;
       }
+
+      // Capture the projectId at mutation start to verify it hasn't changed on completion.
+      const mutationProjectId = projectId;
 
       setRemovingId(collaboratorId);
       setError(null);
@@ -283,17 +304,26 @@ export function useShareDialog({
         );
 
         if (!response.ok) {
-          setError(await readApiError(response));
+          if (activeProjectIdRef.current === mutationProjectId) {
+            setError(await readApiError(response));
+          }
           return;
         }
 
-        setCollaborators((current) =>
-          current.filter((collaborator) => collaborator.id !== collaboratorId),
-        );
+        // Only update state if we're still on the same project.
+        if (activeProjectIdRef.current === mutationProjectId) {
+          setCollaborators((current) =>
+            current.filter((collaborator) => collaborator.id !== collaboratorId),
+          );
+        }
       } catch {
-        setError("Something went wrong. Try again.");
+        if (activeProjectIdRef.current === mutationProjectId) {
+          setError("Something went wrong. Try again.");
+        }
       } finally {
-        setRemovingId(null);
+        if (activeProjectIdRef.current === mutationProjectId) {
+          setRemovingId(null);
+        }
       }
     },
     [resolvedCanManage, projectId, removingId],

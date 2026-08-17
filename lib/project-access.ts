@@ -33,12 +33,9 @@ export async function findAccessibleProjectForViewer(
   projectId: string,
   identity: ClerkIdentity,
 ) {
-  // Use all verified emails to match collaborators invited via any verified address.
-  const emails = identity.verifiedEmails.length > 0
-    ? identity.verifiedEmails
-    : identity.primaryEmail
-      ? [identity.primaryEmail]
-      : [];
+  // Only use verified emails. Never fall back to an unverified primary email,
+  // as that would grant access without proving ownership of the invited address.
+  const emails = identity.verifiedEmails;
 
   return findAccessibleProject(projectId, identity.userId, emails);
 }
