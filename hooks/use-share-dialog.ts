@@ -142,6 +142,7 @@ export function useShareDialog({
 
     void (async () => {
       setIsLoading(true);
+      setCollaborators([]);
       setLoadedCanManage(null);
       setError(null);
 

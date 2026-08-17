@@ -5,6 +5,7 @@ import { findAccessibleProject } from "@/lib/projects";
 export interface ClerkIdentity {
   userId: string;
   primaryEmail: string | null;
+  verifiedEmails: string[];
 }
 
 export async function getCurrentClerkIdentity(): Promise<ClerkIdentity | null> {
@@ -17,14 +18,27 @@ export async function getCurrentClerkIdentity(): Promise<ClerkIdentity | null> {
   const user = await currentUser();
   const primaryEmail = user?.primaryEmailAddress?.emailAddress ?? null;
 
-  return { userId, primaryEmail };
+  // Include all verified email addresses, not just the primary one.
+  // This ensures collaborators invited via non-primary verified emails
+  // are correctly recognized in membership queries.
+  const verifiedEmails =
+    user?.emailAddresses
+      ?.filter((e) => e.verification?.status === "verified")
+      .map((e) => e.emailAddress) ?? [];
+
+  return { userId, primaryEmail, verifiedEmails };
 }
 
 export async function findAccessibleProjectForViewer(
   projectId: string,
   identity: ClerkIdentity,
 ) {
-  const emails = identity.primaryEmail ? [identity.primaryEmail] : [];
+  // Use all verified emails to match collaborators invited via any verified address.
+  const emails = identity.verifiedEmails.length > 0
+    ? identity.verifiedEmails
+    : identity.primaryEmail
+      ? [identity.primaryEmail]
+      : [];
 
   return findAccessibleProject(projectId, identity.userId, emails);
 }
