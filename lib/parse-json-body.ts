@@ -53,3 +53,23 @@ export function readOptionalId(body: unknown): string | undefined | Response {
 
   return body.id;
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function readRequiredEmail(body: unknown): string | Response {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  if (!("email" in body) || typeof body.email !== "string") {
+    return Response.json({ error: "Invalid email" }, { status: 400 });
+  }
+
+  const email = body.email.trim().toLowerCase();
+
+  if (email === "" || !EMAIL_PATTERN.test(email)) {
+    return Response.json({ error: "Invalid email" }, { status: 400 });
+  }
+
+  return email;
+}

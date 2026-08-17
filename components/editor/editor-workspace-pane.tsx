@@ -2,11 +2,14 @@
 
 import type { ReactNode } from "react";
 
+import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { useMobileViewport } from "@/hooks/use-mobile-viewport";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 interface EditorWorkspacePaneProps {
+  aiSidebarOpen: boolean;
+  currentRoomId?: string;
   sidebarOpen: boolean;
   onSidebarClose: () => void;
   ownedProjects: EditorProjectListItem[];
@@ -15,6 +18,8 @@ interface EditorWorkspacePaneProps {
 }
 
 export function EditorWorkspacePane({
+  aiSidebarOpen,
+  currentRoomId,
   sidebarOpen,
   onSidebarClose,
   ownedProjects,
@@ -22,10 +27,11 @@ export function EditorWorkspacePane({
   children,
 }: EditorWorkspacePaneProps) {
   const isMobile = useMobileViewport();
+  const contentObscured = isMobile && (sidebarOpen || aiSidebarOpen);
 
   return (
-    <div className="relative min-h-0 flex-1">
-      {sidebarOpen ? (
+    <div className="relative flex min-h-0 flex-1 gap-2 px-2 pb-2">
+      {sidebarOpen && isMobile ? (
         <button
           type="button"
           aria-label="Close sidebar"
@@ -34,12 +40,22 @@ export function EditorWorkspacePane({
         />
       ) : null}
       <ProjectSidebar
+        currentRoomId={currentRoomId}
+        docked={!isMobile}
         isOpen={sidebarOpen}
-        onClose={onSidebarClose}
         ownedProjects={ownedProjects}
         sharedProjects={sharedProjects}
+        onClose={onSidebarClose}
       />
-      <div inert={sidebarOpen && isMobile}>{children}</div>
+      <div
+        className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-surface-border bg-base"
+        inert={contentObscured}
+      >
+        {children}
+      </div>
+      {currentRoomId ? (
+        <AiSidebarPlaceholder docked={!isMobile} isOpen={aiSidebarOpen} />
+      ) : null}
     </div>
   );
 }

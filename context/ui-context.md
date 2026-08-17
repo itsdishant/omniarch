@@ -41,11 +41,14 @@ Both fonts are loaded via `next/font/google` and applied as CSS variables on the
 
 Radius increases with surface depth — smaller for inner elements, larger for outer containers.
 
-| Context           | Class         |
-| ----------------- | ------------- |
-| Inline / small UI | `rounded-xl`  |
-| Cards / panels    | `rounded-2xl` |
-| Modal / overlay   | `rounded-3xl` |
+| Context                         | Class           |
+| ------------------------------- | --------------- |
+| Inline / small UI               | `rounded-xl`    |
+| Cards / panels / canvas surface | `rounded-2xl`   |
+| Modal / overlay                 | `rounded-3xl`   |
+| Editor chrome CTAs              | `rounded-full`  |
+
+Chrome CTAs are pill-shaped: navbar **Share** and **AI**, sidebar **New Project**. Do not restyle those back to rectangular buttons.
 
 ## Canvas
 
@@ -87,7 +90,16 @@ Small white circular handles, hidden by default, revealed on node hover. Appear 
 
 ### Canvas Background
 
-React Flow `<Background>` component. Canvas sits on the base background color.
+React Flow-style **dot grid** on `--bg-base`. Small, evenly spaced dots — not a line grid.
+
+Placeholder canvases use `.canvas-dots` in `globals.css`:
+
+- background: `--bg-base`
+- dots: `color-mix` of `--text-primary` at 16% opacity, 1px
+- gap: `20px` (React Flow `Background` default)
+- position offset: `10px 10px`
+
+When the live React Flow canvas lands, use `<Background variant="dots">` with the same gap and a token-based color so it matches `.canvas-dots`. Do not switch to `lines` or `cross`.
 
 ## Component Library
 
@@ -95,10 +107,44 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 
 ## Layout Patterns
 
-- Editor workspace: full-viewport layout — floating sidebar overlay on the left, center canvas, slide-over AI sidebar on the right.
-- Sidebars: floating overlay with dark semi-transparent background and subtle border.
+- Editor workspace: inset three-column shell on `--bg-base` — rounded project panel, canvas, and AI panel with a thin gap (`gap-2`, `px-2 pb-2`). On mobile the sidebars overlay instead of docking.
+- Sidebars: `rounded-2xl` `bg-surface` panels with a hairline `border-surface-border`. Desktop docks them in the layout when open (`hidden` when closed, not unmounted). Mobile slides them over the canvas with a scrim.
+- Canvas surface: `rounded-2xl` bordered panel, `bg-base`, fills remaining width. Children must be `w-full h-full` flex columns so home/empty states stay centered — never a row flex that shrinks content to the left.
 - Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
-- Navbar: top bar with dark background and bottom border.
+
+## Editor Chrome
+
+This is the locked visual language for `/editor` and `/editor/[roomId]`. Later canvas, Liveblocks, and AI work must compose inside it — do not flatten panels, restore a full-bleed navbar bar, or replace the dot grid.
+
+### Navbar
+
+Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
+
+- Left: sidebar toggle, then project name (or `Omniarch` on home) with a `Workspace` subtitle in `text-copy-muted`.
+- Right (workspace only): outline pill **Share**, solid cyan pill **AI** (`Sparkles` + label), then Clerk `UserButton`.
+- Home hides Share and AI.
+
+### Project sidebar
+
+- Header: `Projects` + close.
+- Segmented **My Projects** / **Shared** tabs. The selected tab follows the current room: a shared room opens **Shared**; an owned room opens **My Projects**. Manual tab changes persist until the room changes.
+- Current room: cyan status dot + `bg-accent-dim` row.
+- Footer pinned: circular compass mark + pill **New Project** (`rounded-full`, cyan).
+
+### Home vs workspace
+
+- `/editor` (home): both sidebars **closed**. Create-project copy and CTA are centered in the canvas panel.
+- `/editor/[roomId]`: both sidebars **open** by default (docked on desktop).
+
+### AI Copilot panel
+
+Right column, `w-80`, `rounded-2xl` surface.
+
+- Header: `AI Copilot` + `Placeholder panel.` and a spark icon.
+- Body card: robot icon, `Chat surface pending`.
+- Footer card: `FUTURE HOOKS` label for prompt/spec work still out of scope.
+
+Real chat later replaces the placeholder cards; keep the panel chrome.
 
 ## Icons
 

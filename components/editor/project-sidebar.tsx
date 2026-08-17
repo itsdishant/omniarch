@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Compass, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,7 +11,25 @@ import { useProjectDialogsContext } from "@/components/editor/project-dialogs-pr
 import type { EditorProjectListItem } from "@/lib/projects";
 import { cn } from "@/lib/utils";
 
+export type ProjectSidebarTab = "my-projects" | "shared";
+
+function tabForCurrentRoom(
+  currentRoomId: string | undefined,
+  sharedProjects: EditorProjectListItem[],
+): ProjectSidebarTab {
+  if (
+    currentRoomId &&
+    sharedProjects.some((project) => project.id === currentRoomId)
+  ) {
+    return "shared";
+  }
+
+  return "my-projects";
+}
+
 interface ProjectSidebarProps {
+  currentRoomId?: string;
+  docked: boolean;
   isOpen: boolean;
   onClose: () => void;
   ownedProjects: EditorProjectListItem[];
@@ -30,23 +49,41 @@ function EmptyProjectsPlaceholder({ label }: EmptyProjectsPlaceholderProps) {
 }
 
 interface ProjectListItemProps {
+  currentRoomId?: string;
   project: EditorProjectListItem;
   showActions: boolean;
 }
 
-function ProjectListItem({ project, showActions }: ProjectListItemProps) {
+function ProjectListItem({
+  currentRoomId,
+  project,
+  showActions,
+}: ProjectListItemProps) {
   const { openRename, openDelete } = useProjectDialogsContext();
+  const isCurrentRoom = currentRoomId === project.id;
 
   return (
-    <li className="flex items-center gap-1 px-2 py-1">
+    <li className="group flex items-center gap-1 px-2 py-0.5">
       <Link
         href={`/editor/${encodeURIComponent(project.id)}`}
-        className="min-w-0 flex-1 truncate px-1 text-sm text-copy-primary"
+        aria-current={isCurrentRoom ? "page" : undefined}
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-sm",
+          isCurrentRoom
+            ? "bg-accent-dim text-copy-primary"
+            : "text-copy-primary hover:bg-subtle",
+        )}
       >
-        {project.name}
+        <span
+          className={cn(
+            "h-1.5 w-1.5 shrink-0 rounded-full",
+            isCurrentRoom ? "bg-brand" : "bg-transparent",
+          )}
+        />
+        <span className="truncate">{project.name}</span>
       </Link>
       {showActions ? (
-        <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             type="button"
             variant="ghost"
@@ -54,7 +91,7 @@ function ProjectListItem({ project, showActions }: ProjectListItemProps) {
             aria-label={`Rename ${project.name}`}
             onClick={() => openRename(project)}
           >
-            <Pencil className="h-5 w-5" />
+            <Pencil className="h-4 w-4" />
           </Button>
           <Button
             type="button"
@@ -63,7 +100,7 @@ function ProjectListItem({ project, showActions }: ProjectListItemProps) {
             aria-label={`Delete ${project.name}`}
             onClick={() => openDelete(project)}
           >
-            <Trash2 className="h-5 w-5" />
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ) : null}
@@ -72,12 +109,18 @@ function ProjectListItem({ project, showActions }: ProjectListItemProps) {
 }
 
 interface ProjectListProps {
+  currentRoomId?: string;
   projects: EditorProjectListItem[];
   emptyLabel: string;
   showActions: boolean;
 }
 
-function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
+function ProjectList({
+  currentRoomId,
+  projects,
+  emptyLabel,
+  showActions,
+}: ProjectListProps) {
   if (projects.length === 0) {
     return <EmptyProjectsPlaceholder label={emptyLabel} />;
   }
@@ -87,6 +130,7 @@ function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
       {projects.map((project) => (
         <ProjectListItem
           key={project.id}
+          currentRoomId={currentRoomId}
           project={project}
           showActions={showActions}
         />
@@ -96,29 +140,46 @@ function ProjectList({ projects, emptyLabel, showActions }: ProjectListProps) {
 }
 
 export function ProjectSidebar({
+  currentRoomId,
+  docked,
   isOpen,
   onClose,
   ownedProjects,
   sharedProjects,
 }: ProjectSidebarProps) {
   const { openCreate } = useProjectDialogsContext();
+  const roomTab = tabForCurrentRoom(currentRoomId, sharedProjects);
+  const [tabOverride, setTabOverride] = useState<{
+    roomId: string | undefined;
+    tab: ProjectSidebarTab;
+  } | null>(null);
+  const tab =
+    tabOverride && tabOverride.roomId === currentRoomId
+      ? tabOverride.tab
+      : roomTab;
 
   return (
     <aside
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "pointer-events-none absolute inset-y-0 left-0 z-20 flex w-72 flex-col border-r border-surface-border bg-surface/95 shadow-lg transition-transform duration-200 ease-out",
-        isOpen ? "translate-x-0" : "-translate-x-full",
+        "flex w-72 shrink-0 flex-col rounded-2xl border border-surface-border bg-surface",
+        docked && !isOpen && "hidden",
+        docked
+          ? "relative h-full"
+          : cn(
+              "pointer-events-none absolute inset-y-2 left-2 z-20 shadow-lg transition-transform duration-200 ease-out",
+              isOpen ? "translate-x-0" : "-translate-x-[calc(100%+0.5rem)]",
+            ),
       )}
     >
       <div
         className={cn(
           "flex h-full flex-col",
-          isOpen ? "pointer-events-auto" : "pointer-events-none",
+          docked || isOpen ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-surface-border px-3">
+        <div className="flex h-12 shrink-0 items-center justify-between px-3">
           <h2 className="text-sm font-medium text-copy-primary">Projects</h2>
           <Button
             type="button"
@@ -132,19 +193,29 @@ export function ProjectSidebar({
         </div>
 
         <Tabs
-          defaultValue="my-projects"
+          value={tab}
+          onValueChange={(value) => {
+            if (value === "my-projects" || value === "shared") {
+              setTabOverride({ roomId: currentRoomId, tab: value });
+            }
+          }}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="shrink-0 border-b border-surface-border px-3 py-2">
-            <TabsList className="w-full">
-              <TabsTrigger value="my-projects">My Projects</TabsTrigger>
-              <TabsTrigger value="shared">Shared</TabsTrigger>
+          <div className="shrink-0 px-3 pb-2">
+            <TabsList className="w-full rounded-xl">
+              <TabsTrigger value="my-projects" className="rounded-lg">
+                My Projects
+              </TabsTrigger>
+              <TabsTrigger value="shared" className="rounded-lg">
+                Shared
+              </TabsTrigger>
             </TabsList>
           </div>
 
           <ScrollArea className="min-h-0 flex-1">
             <TabsContent value="my-projects" className="h-full">
               <ProjectList
+                currentRoomId={currentRoomId}
                 projects={ownedProjects}
                 emptyLabel="No projects yet"
                 showActions
@@ -152,6 +223,7 @@ export function ProjectSidebar({
             </TabsContent>
             <TabsContent value="shared" className="h-full">
               <ProjectList
+                currentRoomId={currentRoomId}
                 projects={sharedProjects}
                 emptyLabel="No shared projects yet"
                 showActions={false}
@@ -160,9 +232,16 @@ export function ProjectSidebar({
           </ScrollArea>
         </Tabs>
 
-        <div className="shrink-0 border-t border-surface-border p-3">
-          <Button type="button" className="w-full" onClick={openCreate}>
-            <Plus data-icon="inline-start" className="h-5 w-5" />
+        <div className="flex shrink-0 items-center gap-2 p-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-surface-border bg-elevated">
+            <Compass className="h-4 w-4 text-brand" />
+          </div>
+          <Button
+            type="button"
+            className="h-8 flex-1 rounded-full"
+            onClick={openCreate}
+          >
+            <Plus data-icon="inline-start" className="h-4 w-4" />
             New Project
           </Button>
         </div>
