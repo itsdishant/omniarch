@@ -119,30 +119,33 @@ export function useShareDialog({
   const [loadedCanManage, setLoadedCanManage] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isInviting, setIsInviting] = useState(false);
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [inviteLockProjectId, setInviteLockProjectId] = useState<string | null>(
+    null,
+  );
+  const [removeLock, setRemoveLock] = useState<{
+    projectId: string;
+    collaboratorId: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
+  const [scopedProjectId, setScopedProjectId] = useState(projectId);
   const resolvedCanManage = loadedCanManage ?? canManage;
+  const isInviting = inviteLockProjectId !== null;
+  const removingId = removeLock?.collaboratorId ?? null;
 
-  // Track the projectId at the time each mutation starts to prevent
-  // cross-project state corruption when requests complete out of order.
-  const activeProjectIdRef = useRef<string | undefined>(projectId);
-
-  useEffect(() => {
-    activeProjectIdRef.current = projectId;
-  }, [projectId]);
-
-  // Clear collaborator state immediately when projectId changes to prevent
-  // flashing previous project's data before the fetch effect runs.
-  useEffect(() => {
-    if (projectId) {
-      setCollaborators([]);
-      setLoadedCanManage(null);
-      setError(null);
+  if (projectId !== scopedProjectId) {
+    setScopedProjectId(projectId);
+    setCollaborators([]);
+    setLoadedCanManage(null);
+    setError(null);
+    setEmail("");
+    setInviteLockProjectId(null);
+    setRemoveLock(null);
+    if (open && projectId) {
+      setIsLoading(true);
     }
-  }, [projectId]);
+  }
 
   function clearCopiedTimeout() {
     if (copiedTimeoutRef.current !== null) {
@@ -241,7 +244,7 @@ export function useShareDialog({
   }, []);
 
   const invite = useCallback(async () => {
-    if (!resolvedCanManage || !projectId || isInviting) {
+    if (!resolvedCanManage || !projectId || inviteLockProjectId) {
       return;
     }
 
@@ -250,11 +253,21 @@ export function useShareDialog({
       return;
     }
 
-    // Capture the projectId at mutation start to verify it hasn't changed on completion.
     const mutationProjectId = projectId;
-
-    setIsInviting(true);
+    setInviteLockProjectId(mutationProjectId);
     setError(null);
+
+    function releaseIfOwned(): boolean {
+      let owned = false;
+      setInviteLockProjectId((current) => {
+        if (current !== mutationProjectId) {
+          return current;
+        }
+        owned = true;
+        return null;
+      });
+      return owned;
+    }
 
     try {
       const response = await fetch(
@@ -267,7 +280,7 @@ export function useShareDialog({
       );
 
       if (!response.ok) {
-        if (activeProjectIdRef.current === mutationProjectId) {
+        if (releaseIfOwned()) {
           setError(await readApiError(response));
         }
         return;
@@ -277,39 +290,47 @@ export function useShareDialog({
       const collaborator = readCreatedCollaborator(payload);
 
       if (!collaborator) {
-        if (activeProjectIdRef.current === mutationProjectId) {
+        if (releaseIfOwned()) {
           setError("Something went wrong. Try again.");
         }
         return;
       }
 
-      // Only update state if we're still on the same project.
-      if (activeProjectIdRef.current === mutationProjectId) {
+      if (releaseIfOwned()) {
         setCollaborators((current) => [...current, collaborator]);
         setEmail("");
       }
     } catch {
-      if (activeProjectIdRef.current === mutationProjectId) {
+      if (releaseIfOwned()) {
         setError("Something went wrong. Try again.");
       }
-    } finally {
-      // Always clear the loading state to avoid stuck UI, even if project changed.
-      // Collaborator list and error updates are still guarded by project identity.
-      setIsInviting(false);
     }
-  }, [resolvedCanManage, email, isInviting, projectId]);
+  }, [resolvedCanManage, email, inviteLockProjectId, projectId]);
 
   const remove = useCallback(
     async (collaboratorId: string) => {
-      if (!resolvedCanManage || !projectId || removingId) {
+      if (!resolvedCanManage || !projectId || removeLock) {
         return;
       }
 
-      // Capture the projectId at mutation start to verify it hasn't changed on completion.
       const mutationProjectId = projectId;
-
-      setRemovingId(collaboratorId);
+      setRemoveLock({ projectId: mutationProjectId, collaboratorId });
       setError(null);
+
+      function releaseIfOwned(): boolean {
+        let owned = false;
+        setRemoveLock((current) => {
+          if (
+            current?.projectId !== mutationProjectId ||
+            current.collaboratorId !== collaboratorId
+          ) {
+            return current;
+          }
+          owned = true;
+          return null;
+        });
+        return owned;
+      }
 
       try {
         const response = await fetch(
@@ -318,29 +339,24 @@ export function useShareDialog({
         );
 
         if (!response.ok) {
-          if (activeProjectIdRef.current === mutationProjectId) {
+          if (releaseIfOwned()) {
             setError(await readApiError(response));
           }
           return;
         }
 
-        // Only update state if we're still on the same project.
-        if (activeProjectIdRef.current === mutationProjectId) {
+        if (releaseIfOwned()) {
           setCollaborators((current) =>
             current.filter((collaborator) => collaborator.id !== collaboratorId),
           );
         }
       } catch {
-        if (activeProjectIdRef.current === mutationProjectId) {
+        if (releaseIfOwned()) {
           setError("Something went wrong. Try again.");
         }
-      } finally {
-        // Always clear the loading state to avoid stuck UI, even if project changed.
-        // Collaborator list and error updates are still guarded by project identity.
-        setRemovingId(null);
       }
     },
-    [resolvedCanManage, projectId, removingId],
+    [resolvedCanManage, projectId, removeLock],
   );
 
   return {
