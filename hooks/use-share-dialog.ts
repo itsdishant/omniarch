@@ -134,6 +134,16 @@ export function useShareDialog({
     activeProjectIdRef.current = projectId;
   }, [projectId]);
 
+  // Clear collaborator state immediately when projectId changes to prevent
+  // flashing previous project's data before the fetch effect runs.
+  useEffect(() => {
+    if (projectId) {
+      setCollaborators([]);
+      setLoadedCanManage(null);
+      setError(null);
+    }
+  }, [projectId]);
+
   function clearCopiedTimeout() {
     if (copiedTimeoutRef.current !== null) {
       window.clearTimeout(copiedTimeoutRef.current);
