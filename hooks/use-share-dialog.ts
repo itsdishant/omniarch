@@ -279,9 +279,9 @@ export function useShareDialog({
         setError("Something went wrong. Try again.");
       }
     } finally {
-      if (activeProjectIdRef.current === mutationProjectId) {
-        setIsInviting(false);
-      }
+      // Always clear the loading state to avoid stuck UI, even if project changed.
+      // Collaborator list and error updates are still guarded by project identity.
+      setIsInviting(false);
     }
   }, [resolvedCanManage, email, isInviting, projectId]);
 
@@ -321,9 +321,9 @@ export function useShareDialog({
           setError("Something went wrong. Try again.");
         }
       } finally {
-        if (activeProjectIdRef.current === mutationProjectId) {
-          setRemovingId(null);
-        }
+        // Always clear the loading state to avoid stuck UI, even if project changed.
+        // Collaborator list and error updates are still guarded by project identity.
+        setRemovingId(null);
       }
     },
     [resolvedCanManage, projectId, removingId],
