@@ -35,7 +35,7 @@ export function EditorWorkspacePane({
         <button
           type="button"
           aria-label="Close sidebar"
-          className="absolute inset-0 z-20 bg-base/70 md:hidden"
+          className="absolute inset-0 z-[25] bg-base/70 md:hidden"
           onClick={onSidebarClose}
         />
       ) : null}

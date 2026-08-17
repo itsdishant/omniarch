@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ClientSideSuspense,
   LiveblocksProvider,
@@ -20,7 +20,9 @@ import {
   BackgroundVariant,
   ConnectionMode,
   Controls,
+  Handle,
   MiniMap,
+  Position,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
@@ -151,18 +153,41 @@ function FlowCursor({ connectionId }: CursorsCursorProps) {
 
 function CanvasNodeComponent({ data }: { data: CanvasNode["data"] }) {
   const { label, color, shape } = data;
+
   return (
-    <div
-      className="flex min-h-12 min-w-20 items-center justify-center rounded-md border-2"
-      style={{
-        borderColor: color,
-        backgroundColor: `${color}15`,
-        color: color,
-      }}
-    >
-      <span className="max-w-full truncate px-3 py-1.5 text-sm font-medium">
-        {label || shape}
-      </span>
+    <div className="group relative h-full w-full">
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Top}
+        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <Handle
+        type="target"
+        position={Position.Bottom}
+        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
+      />
+      <div
+        className="flex h-full w-full items-center justify-center rounded-md border-2"
+        style={{
+          borderColor: color,
+          backgroundColor: `${color}15`,
+          color: color,
+        }}
+      >
+        <span className="max-w-full truncate px-3 py-1.5 text-sm font-medium">
+          {label || shape}
+        </span>
+      </div>
     </div>
   );
 }
@@ -172,7 +197,6 @@ const canvasNodeTypes: NodeTypes = {
 };
 
 function CanvasFlow() {
-  const nodeCounterRef = useRef(0);
   const { screenToFlowPosition } = useReactFlow<CanvasNode, CanvasEdge>();
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
@@ -198,9 +222,7 @@ function CanvasFlow() {
 
       const { shape, width, height } = payload;
       const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
-
-      nodeCounterRef.current += 1;
-      const nodeId = `${shape}-${Date.now()}-${nodeCounterRef.current}`;
+      const nodeId = crypto.randomUUID();
 
       const newNode: CanvasNode = {
         id: nodeId,

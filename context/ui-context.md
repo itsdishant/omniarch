@@ -114,7 +114,7 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 
 ## Editor Chrome
 
-This is the locked visual language for `/editor` and `/editor/[roomId]`. Later canvas, Liveblocks, and AI work must compose inside it — do not restore a full-bleed filled navbar bar, or replace the dot grid. The canvas stays flush with the page background (Figma-style), not an inset card.
+This is the locked visual language for `/editor` and `/editor/[roomId]`. Later canvas, Liveblocks, and AI work must compose inside it — the navbar must not use a filled full-width background, and the canvas stays flush with the page background (Figma-style), not an inset card. Do not restore a full-bleed filled navbar bar, or replace the dot grid.
 
 ### Navbar
 

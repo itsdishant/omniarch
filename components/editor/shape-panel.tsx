@@ -11,7 +11,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasShape } from "@/types/canvas";
-import { DEFAULT_SHAPE_SIZES, SHAPE_NAMES } from "@/types/canvas";
+import {
+  DEFAULT_SHAPE_SIZES,
+  SHAPE_ICONS,
+  SHAPE_NAMES,
+} from "@/types/canvas";
 
 export const SHAPE_DRAG_MIME = "application/omniarch-shape";
 
@@ -37,7 +41,7 @@ export function writeShapeDragPayload(
 }
 
 function isCanvasShape(value: string): value is CanvasShape {
-  return value in DEFAULT_SHAPE_SIZES;
+  return Object.hasOwn(DEFAULT_SHAPE_SIZES, value);
 }
 
 export function readShapeDragPayload(
@@ -60,10 +64,28 @@ export function readShapeDragPayload(
     ) {
       return null;
     }
+
+    const defaultSize = DEFAULT_SHAPE_SIZES[parsed.shape];
+    const width = parsed.width;
+    const height = parsed.height;
+
+    if (
+      !Number.isFinite(width) ||
+      !Number.isFinite(height) ||
+      width <= 0 ||
+      height <= 0 ||
+      width < defaultSize.width * 0.5 ||
+      width > defaultSize.width * 2 ||
+      height < defaultSize.height * 0.5 ||
+      height > defaultSize.height * 2
+    ) {
+      return null;
+    }
+
     return {
       shape: parsed.shape,
-      width: parsed.width,
-      height: parsed.height,
+      width,
+      height,
     };
   } catch {
     return null;
@@ -74,23 +96,16 @@ interface ShapePanelProps {
   onDragStart?: (e: React.DragEvent, shape: CanvasShape) => void;
 }
 
-const shapeIcons: Record<CanvasShape, React.ComponentType<{ className?: string }>> = {
-  rectangle: Square,
+const shapeIconComponents = {
+  square: Square,
   diamond: Diamond,
   circle: Circle,
   pill: Pill,
   cylinder: Cylinder,
   hexagon: Hexagon,
-};
+} as const;
 
-const shapes: CanvasShape[] = [
-  "rectangle",
-  "diamond",
-  "circle",
-  "pill",
-  "cylinder",
-  "hexagon",
-];
+const shapes = Object.keys(SHAPE_NAMES) as CanvasShape[];
 
 export function ShapePanel({ onDragStart }: ShapePanelProps) {
   const handleDragStart = useCallback(
@@ -109,7 +124,9 @@ export function ShapePanel({ onDragStart }: ShapePanelProps) {
       aria-label="Shape tools"
     >
       {shapes.map((shape) => {
-        const Icon = shapeIcons[shape];
+        const iconName = SHAPE_ICONS[shape];
+        const Icon = shapeIconComponents[iconName as keyof typeof shapeIconComponents];
+
         return (
           <button
             key={shape}
