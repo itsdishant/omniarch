@@ -74,18 +74,16 @@ export function readShapeDragPayload(
       !Number.isFinite(height) ||
       width <= 0 ||
       height <= 0 ||
-      width < defaultSize.width * 0.5 ||
-      width > defaultSize.width * 2 ||
-      height < defaultSize.height * 0.5 ||
-      height > defaultSize.height * 2
+      width !== defaultSize.width ||
+      height !== defaultSize.height
     ) {
       return null;
     }
 
     return {
       shape: parsed.shape,
-      width,
-      height,
+      width: defaultSize.width,
+      height: defaultSize.height,
     };
   } catch {
     return null;
