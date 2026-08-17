@@ -257,7 +257,9 @@ export function useShareDialog({
       );
 
       if (!response.ok) {
-        setError(await readApiError(response));
+        if (activeProjectIdRef.current === mutationProjectId) {
+          setError(await readApiError(response));
+        }
         return;
       }
 
@@ -265,7 +267,9 @@ export function useShareDialog({
       const collaborator = readCreatedCollaborator(payload);
 
       if (!collaborator) {
-        setError("Something went wrong. Try again.");
+        if (activeProjectIdRef.current === mutationProjectId) {
+          setError("Something went wrong. Try again.");
+        }
         return;
       }
 
