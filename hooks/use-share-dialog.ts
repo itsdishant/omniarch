@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 export interface ShareCollaborator {
   id: string;
@@ -110,41 +110,185 @@ function readCreatedCollaborator(value: unknown): ShareCollaborator | null {
   return readCollaborator(value.collaborator);
 }
 
+interface RemoveLock {
+  generation: number;
+  collaboratorId: string;
+}
+
+interface ShareSessionState {
+  scopedProjectId: string | undefined;
+  collaborators: ShareCollaborator[];
+  loadedCanManage: boolean | null;
+  email: string;
+  error: string | null;
+  isLoading: boolean;
+  inviteGeneration: number | null;
+  removeLock: RemoveLock | null;
+}
+
+type ShareSessionAction =
+  | { type: "scope-project"; projectId: string | undefined; open: boolean }
+  | { type: "fetch-start" }
+  | {
+      type: "fetch-success";
+      collaborators: ShareCollaborator[];
+      canManage: boolean;
+    }
+  | { type: "fetch-error"; error: string }
+  | { type: "fetch-end" }
+  | { type: "invite-start"; generation: number }
+  | { type: "invite-success"; generation: number; collaborator: ShareCollaborator }
+  | { type: "invite-error"; generation: number; error: string }
+  | { type: "remove-start"; generation: number; collaboratorId: string }
+  | { type: "remove-success"; generation: number; collaboratorId: string }
+  | { type: "remove-error"; generation: number; error: string }
+  | { type: "set-email"; email: string }
+  | { type: "set-error"; error: string }
+  | { type: "reset-form" };
+
+function shareSessionReducer(
+  state: ShareSessionState,
+  action: ShareSessionAction,
+): ShareSessionState {
+  switch (action.type) {
+    case "scope-project":
+      return {
+        ...state,
+        scopedProjectId: action.projectId,
+        collaborators: [],
+        loadedCanManage: null,
+        email: "",
+        error: null,
+        isLoading: Boolean(action.open && action.projectId),
+        inviteGeneration: null,
+        removeLock: null,
+      };
+    case "fetch-start":
+      return {
+        ...state,
+        isLoading: true,
+        collaborators: [],
+        loadedCanManage: null,
+        error: null,
+      };
+    case "fetch-success":
+      return {
+        ...state,
+        isLoading: false,
+        collaborators: action.collaborators,
+        loadedCanManage: action.canManage,
+      };
+    case "fetch-error":
+      return {
+        ...state,
+        isLoading: false,
+        error: action.error,
+      };
+    case "fetch-end":
+      return {
+        ...state,
+        isLoading: false,
+      };
+    case "invite-start":
+      return {
+        ...state,
+        inviteGeneration: action.generation,
+        error: null,
+      };
+    case "invite-success":
+      if (state.inviteGeneration !== action.generation) {
+        return state;
+      }
+      return {
+        ...state,
+        inviteGeneration: null,
+        collaborators: [...state.collaborators, action.collaborator],
+        email: "",
+      };
+    case "invite-error":
+      if (state.inviteGeneration !== action.generation) {
+        return state;
+      }
+      return {
+        ...state,
+        inviteGeneration: null,
+        error: action.error,
+      };
+    case "remove-start":
+      return {
+        ...state,
+        removeLock: {
+          generation: action.generation,
+          collaboratorId: action.collaboratorId,
+        },
+        error: null,
+      };
+    case "remove-success":
+      if (state.removeLock?.generation !== action.generation) {
+        return state;
+      }
+      return {
+        ...state,
+        removeLock: null,
+        collaborators: state.collaborators.filter(
+          (collaborator) => collaborator.id !== action.collaboratorId,
+        ),
+      };
+    case "remove-error":
+      if (state.removeLock?.generation !== action.generation) {
+        return state;
+      }
+      return {
+        ...state,
+        removeLock: null,
+        error: action.error,
+      };
+    case "set-email":
+      return {
+        ...state,
+        email: action.email,
+      };
+    case "set-error":
+      return {
+        ...state,
+        error: action.error,
+      };
+    case "reset-form":
+      return {
+        ...state,
+        email: "",
+        error: null,
+        loadedCanManage: null,
+      };
+    default:
+      return state;
+  }
+}
+
 export function useShareDialog({
   open,
   projectId,
   canManage,
 }: UseShareDialogOptions) {
-  const [collaborators, setCollaborators] = useState<ShareCollaborator[]>([]);
-  const [loadedCanManage, setLoadedCanManage] = useState<boolean | null>(null);
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [inviteLockProjectId, setInviteLockProjectId] = useState<string | null>(
-    null,
-  );
-  const [removeLock, setRemoveLock] = useState<{
-    projectId: string;
-    collaboratorId: string;
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(shareSessionReducer, {
+    scopedProjectId: projectId,
+    collaborators: [],
+    loadedCanManage: null,
+    email: "",
+    error: null,
+    isLoading: false,
+    inviteGeneration: null,
+    removeLock: null,
+  });
   const [copied, setCopied] = useState(false);
   const copiedTimeoutRef = useRef<number | null>(null);
-  const [scopedProjectId, setScopedProjectId] = useState(projectId);
-  const resolvedCanManage = loadedCanManage ?? canManage;
-  const isInviting = inviteLockProjectId !== null;
-  const removingId = removeLock?.collaboratorId ?? null;
+  const mutationIdRef = useRef(0);
+  const resolvedCanManage = state.loadedCanManage ?? canManage;
+  const isInviting = state.inviteGeneration !== null;
+  const removingId = state.removeLock?.collaboratorId ?? null;
 
-  if (projectId !== scopedProjectId) {
-    setScopedProjectId(projectId);
-    setCollaborators([]);
-    setLoadedCanManage(null);
-    setError(null);
-    setEmail("");
-    setInviteLockProjectId(null);
-    setRemoveLock(null);
-    if (open && projectId) {
-      setIsLoading(true);
-    }
+  if (projectId !== state.scopedProjectId) {
+    dispatch({ type: "scope-project", projectId, open });
   }
 
   function clearCopiedTimeout() {
@@ -162,10 +306,7 @@ export function useShareDialog({
     let cancelled = false;
 
     void (async () => {
-      setIsLoading(true);
-      setCollaborators([]);
-      setLoadedCanManage(null);
-      setError(null);
+      dispatch({ type: "fetch-start" });
 
       try {
         const response = await fetch(
@@ -174,7 +315,7 @@ export function useShareDialog({
 
         if (!response.ok) {
           if (!cancelled) {
-            setError(await readApiError(response));
+            dispatch({ type: "fetch-error", error: await readApiError(response) });
           }
           return;
         }
@@ -184,20 +325,29 @@ export function useShareDialog({
 
         if (!cancelled) {
           if (!nextPayload) {
-            setError("Something went wrong. Try again.");
+            dispatch({
+              type: "fetch-error",
+              error: "Something went wrong. Try again.",
+            });
             return;
           }
 
-          setCollaborators(nextPayload.collaborators);
-          setLoadedCanManage(nextPayload.canManage);
+          dispatch({
+            type: "fetch-success",
+            collaborators: nextPayload.collaborators,
+            canManage: nextPayload.canManage,
+          });
         }
       } catch {
         if (!cancelled) {
-          setError("Something went wrong. Try again.");
+          dispatch({
+            type: "fetch-error",
+            error: "Something went wrong. Try again.",
+          });
         }
       } finally {
         if (!cancelled) {
-          setIsLoading(false);
+          dispatch({ type: "fetch-end" });
         }
       }
     })();
@@ -231,43 +381,36 @@ export function useShareDialog({
         setCopied(false);
       }, 2000);
     } catch {
-      setError("Could not copy the project link.");
+      dispatch({
+        type: "set-error",
+        error: "Could not copy the project link.",
+      });
     }
   }, [projectId]);
 
   const reset = useCallback(() => {
     clearCopiedTimeout();
-    setEmail("");
-    setError(null);
+    dispatch({ type: "reset-form" });
     setCopied(false);
-    setLoadedCanManage(null);
+  }, []);
+
+  const setEmail = useCallback((email: string) => {
+    dispatch({ type: "set-email", email });
   }, []);
 
   const invite = useCallback(async () => {
-    if (!resolvedCanManage || !projectId || inviteLockProjectId) {
+    if (!resolvedCanManage || !projectId || state.inviteGeneration !== null) {
       return;
     }
 
-    const trimmed = email.trim().toLowerCase();
+    const trimmed = state.email.trim().toLowerCase();
     if (trimmed === "") {
       return;
     }
 
-    const mutationProjectId = projectId;
-    setInviteLockProjectId(mutationProjectId);
-    setError(null);
-
-    function releaseIfOwned(): boolean {
-      let owned = false;
-      setInviteLockProjectId((current) => {
-        if (current !== mutationProjectId) {
-          return current;
-        }
-        owned = true;
-        return null;
-      });
-      return owned;
-    }
+    const generation = mutationIdRef.current + 1;
+    mutationIdRef.current = generation;
+    dispatch({ type: "invite-start", generation });
 
     try {
       const response = await fetch(
@@ -280,9 +423,11 @@ export function useShareDialog({
       );
 
       if (!response.ok) {
-        if (releaseIfOwned()) {
-          setError(await readApiError(response));
-        }
+        dispatch({
+          type: "invite-error",
+          generation,
+          error: await readApiError(response),
+        });
         return;
       }
 
@@ -290,47 +435,33 @@ export function useShareDialog({
       const collaborator = readCreatedCollaborator(payload);
 
       if (!collaborator) {
-        if (releaseIfOwned()) {
-          setError("Something went wrong. Try again.");
-        }
+        dispatch({
+          type: "invite-error",
+          generation,
+          error: "Something went wrong. Try again.",
+        });
         return;
       }
 
-      if (releaseIfOwned()) {
-        setCollaborators((current) => [...current, collaborator]);
-        setEmail("");
-      }
+      dispatch({ type: "invite-success", generation, collaborator });
     } catch {
-      if (releaseIfOwned()) {
-        setError("Something went wrong. Try again.");
-      }
+      dispatch({
+        type: "invite-error",
+        generation,
+        error: "Something went wrong. Try again.",
+      });
     }
-  }, [resolvedCanManage, email, inviteLockProjectId, projectId]);
+  }, [resolvedCanManage, state.email, state.inviteGeneration, projectId]);
 
   const remove = useCallback(
     async (collaboratorId: string) => {
-      if (!resolvedCanManage || !projectId || removeLock) {
+      if (!resolvedCanManage || !projectId || state.removeLock) {
         return;
       }
 
-      const mutationProjectId = projectId;
-      setRemoveLock({ projectId: mutationProjectId, collaboratorId });
-      setError(null);
-
-      function releaseIfOwned(): boolean {
-        let owned = false;
-        setRemoveLock((current) => {
-          if (
-            current?.projectId !== mutationProjectId ||
-            current.collaboratorId !== collaboratorId
-          ) {
-            return current;
-          }
-          owned = true;
-          return null;
-        });
-        return owned;
-      }
+      const generation = mutationIdRef.current + 1;
+      mutationIdRef.current = generation;
+      dispatch({ type: "remove-start", generation, collaboratorId });
 
       try {
         const response = await fetch(
@@ -339,35 +470,35 @@ export function useShareDialog({
         );
 
         if (!response.ok) {
-          if (releaseIfOwned()) {
-            setError(await readApiError(response));
-          }
+          dispatch({
+            type: "remove-error",
+            generation,
+            error: await readApiError(response),
+          });
           return;
         }
 
-        if (releaseIfOwned()) {
-          setCollaborators((current) =>
-            current.filter((collaborator) => collaborator.id !== collaboratorId),
-          );
-        }
+        dispatch({ type: "remove-success", generation, collaboratorId });
       } catch {
-        if (releaseIfOwned()) {
-          setError("Something went wrong. Try again.");
-        }
+        dispatch({
+          type: "remove-error",
+          generation,
+          error: "Something went wrong. Try again.",
+        });
       }
     },
-    [resolvedCanManage, projectId, removeLock],
+    [resolvedCanManage, projectId, state.removeLock],
   );
 
   return {
-    collaborators,
+    collaborators: state.collaborators,
     canManage: resolvedCanManage,
-    email,
+    email: state.email,
     setEmail,
-    isLoading,
+    isLoading: state.isLoading,
     isInviting,
     removingId,
-    error,
+    error: state.error,
     copied,
     copyProjectLink,
     invite,
