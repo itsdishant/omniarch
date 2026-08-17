@@ -3,36 +3,24 @@ import { Bot, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarPlaceholderProps {
-  docked: boolean;
   isOpen: boolean;
 }
 
-export function AiSidebarPlaceholder({
-  docked,
-  isOpen,
-}: AiSidebarPlaceholderProps) {
-  if (docked && !isOpen) {
-    return null;
-  }
-
+export function AiSidebarPlaceholder({ isOpen }: AiSidebarPlaceholderProps) {
   return (
     <aside
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "flex w-80 shrink-0 flex-col rounded-2xl border border-surface-border bg-surface",
-        docked
-          ? "relative h-full"
-          : cn(
-              "pointer-events-none absolute inset-y-2 right-2 z-20 shadow-lg transition-transform duration-200 ease-out",
-              isOpen ? "translate-x-0" : "translate-x-[calc(100%+0.5rem)]",
-            ),
+        "pointer-events-none absolute inset-y-3 right-3 z-30 flex w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-lg backdrop-blur-sm",
+        "transition-transform duration-200 ease-out",
+        isOpen ? "translate-x-0" : "translate-x-[calc(100%+1.5rem)]",
       )}
     >
       <div
         className={cn(
           "flex h-full flex-col",
-          docked || isOpen ? "pointer-events-auto" : "pointer-events-none",
+          isOpen ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <div className="flex shrink-0 items-start justify-between px-4 py-3">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Compass, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +29,6 @@ function tabForCurrentRoom(
 
 interface ProjectSidebarProps {
   currentRoomId?: string;
-  docked: boolean;
   isOpen: boolean;
   onClose: () => void;
   ownedProjects: EditorProjectListItem[];
@@ -63,47 +62,60 @@ function ProjectListItem({
   const isCurrentRoom = currentRoomId === project.id;
 
   return (
-    <li className="group flex items-center gap-1 px-2 py-0.5">
-      <Link
-        href={`/editor/${encodeURIComponent(project.id)}`}
-        aria-current={isCurrentRoom ? "page" : undefined}
+    <li className="group px-2 py-0.5">
+      <div
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-sm",
+          "flex items-center rounded-xl",
           isCurrentRoom
             ? "bg-accent-dim text-copy-primary"
             : "text-copy-primary hover:bg-subtle",
         )}
       >
-        <span
-          className={cn(
-            "h-1.5 w-1.5 shrink-0 rounded-full",
-            isCurrentRoom ? "bg-brand" : "bg-transparent",
-          )}
-        />
-        <span className="truncate">{project.name}</span>
-      </Link>
-      {showActions ? (
-        <div className="flex shrink-0 items-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Rename ${project.name}`}
-            onClick={() => openRename(project)}
+        <Link
+          href={`/editor/${encodeURIComponent(project.id)}`}
+          aria-current={isCurrentRoom ? "page" : undefined}
+          className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-sm"
+        >
+          <span
+            className={cn(
+              "h-1.5 w-1.5 shrink-0 rounded-full",
+              isCurrentRoom ? "bg-brand" : "bg-transparent",
+            )}
+          />
+          <span className="truncate">{project.name}</span>
+        </Link>
+        {showActions ? (
+          <div
+            className={cn(
+              "flex shrink-0 items-center pr-1",
+              isCurrentRoom
+                ? "opacity-100"
+                : "opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100",
+            )}
           >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={`Delete ${project.name}`}
-            onClick={() => openDelete(project)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : null}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="bg-transparent hover:bg-transparent"
+              aria-label={`Rename ${project.name}`}
+              onClick={() => openRename(project)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="bg-transparent hover:bg-transparent"
+              aria-label={`Delete ${project.name}`}
+              onClick={() => openDelete(project)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -141,7 +153,6 @@ function ProjectList({
 
 export function ProjectSidebar({
   currentRoomId,
-  docked,
   isOpen,
   onClose,
   ownedProjects,
@@ -163,20 +174,15 @@ export function ProjectSidebar({
       aria-hidden={!isOpen}
       inert={!isOpen}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-2xl border border-surface-border bg-surface",
-        docked && !isOpen && "hidden",
-        docked
-          ? "relative h-full"
-          : cn(
-              "pointer-events-none absolute inset-y-2 left-2 z-20 shadow-lg transition-transform duration-200 ease-out",
-              isOpen ? "translate-x-0" : "-translate-x-[calc(100%+0.5rem)]",
-            ),
+        "pointer-events-none absolute inset-y-3 left-3 z-30 flex w-72 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-lg backdrop-blur-sm",
+        "transition-transform duration-200 ease-out",
+        isOpen ? "translate-x-0" : "-translate-x-[calc(100%+1.5rem)]",
       )}
     >
       <div
         className={cn(
           "flex h-full flex-col",
-          docked || isOpen ? "pointer-events-auto" : "pointer-events-none",
+          isOpen ? "pointer-events-auto" : "pointer-events-none",
         )}
       >
         <div className="flex h-12 shrink-0 items-center justify-between px-3">
@@ -232,13 +238,10 @@ export function ProjectSidebar({
           </ScrollArea>
         </Tabs>
 
-        <div className="flex shrink-0 items-center gap-2 p-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-surface-border bg-elevated">
-            <Compass className="h-4 w-4 text-brand" />
-          </div>
+        <div className="shrink-0 p-3">
           <Button
             type="button"
-            className="h-8 flex-1 rounded-full"
+            className="h-8 w-full rounded-full"
             onClick={openCreate}
           >
             <Plus data-icon="inline-start" className="h-4 w-4" />

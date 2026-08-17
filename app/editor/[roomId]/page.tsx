@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 import { AccessDenied } from "@/components/editor/access-denied";
-import { CanvasPlaceholder } from "@/components/editor/canvas-placeholder";
+import { CanvasWrapper } from "@/components/editor/canvas-wrapper";
 import { EditorShell } from "@/components/editor/editor-shell";
 import {
   findAccessibleProjectForViewer,
@@ -42,7 +42,7 @@ export default async function EditorWorkspacePage({
       projectName={project.name}
       sharedProjects={sharedProjects}
     >
-      <CanvasPlaceholder />
+      <CanvasWrapper roomId={project.id} />
     </EditorShell>
   );
 }

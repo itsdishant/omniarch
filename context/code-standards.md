@@ -27,7 +27,7 @@
 - Reference tokens through their Tailwind utility names: `bg-base`, `text-copy-primary`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
 - Maintain the radius scale in `ui-context.md`: `rounded-xl` for small UI, `rounded-2xl` for panels, `rounded-3xl` for modals, `rounded-full` for editor chrome CTAs (Share, AI, New Project).
 - Canvas surfaces use `.canvas-dots` (or React Flow dots with the same 20px gap). Do not use a line grid.
-- Follow `context/ui-context.md` for editor chrome. Do not flatten the inset panels, fill the navbar, or left-align home empty states.
+- Follow `context/ui-context.md` for editor chrome. Do not fill the navbar, wrap the canvas in a floating card, or left-align home empty states.
 
 ## API Routes
 
@@ -35,6 +35,15 @@
 - Enforce auth and project ownership checks before any mutation.
 - Return consistent, predictable response shapes.
 - Keep route handlers thin — push complexity into shared modules or background tasks.
+- Liveblocks auth denials return `{ error: "forbidden", reason }` so the client stops retrying.
+
+## Liveblocks
+
+- Import React hooks and providers from `@liveblocks/react/suspense`.
+- Wrap collaborative UI in `ClientSideSuspense` and `react-error-boundary` `ErrorBoundary`.
+- Keep room membership in Prisma; issue access tokens with `prepareSession` after `findAccessibleProjectForViewer`.
+- Create rooms with `getOrCreateRoom` and private `defaultAccesses`.
+- Park `#liveblocks-badge` and `.react-flow__attribution` off-canvas with `transform: translate(120vw, 120vh)` and `pointer-events: none`. Do not `display: none`.
 
 ## Data and Storage
 

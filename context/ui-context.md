@@ -41,12 +41,12 @@ Both fonts are loaded via `next/font/google` and applied as CSS variables on the
 
 Radius increases with surface depth — smaller for inner elements, larger for outer containers.
 
-| Context                         | Class           |
-| ------------------------------- | --------------- |
-| Inline / small UI               | `rounded-xl`    |
-| Cards / panels / canvas surface | `rounded-2xl`   |
-| Modal / overlay                 | `rounded-3xl`   |
-| Editor chrome CTAs              | `rounded-full`  |
+| Context                         | Class          |
+| ------------------------------- | -------------- |
+| Inline / small UI               | `rounded-xl`   |
+| Cards / panels / canvas surface | `rounded-2xl`  |
+| Modal / overlay                 | `rounded-3xl`  |
+| Editor chrome CTAs              | `rounded-full` |
 
 Chrome CTAs are pill-shaped: navbar **Share** and **AI**, sidebar **New Project**. Do not restyle those back to rectangular buttons.
 
@@ -107,14 +107,14 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 
 ## Layout Patterns
 
-- Editor workspace: inset three-column shell on `--bg-base` — rounded project panel, canvas, and AI panel with a thin gap (`gap-2`, `px-2 pb-2`). On mobile the sidebars overlay instead of docking.
-- Sidebars: `rounded-2xl` `bg-surface` panels with a hairline `border-surface-border`. Desktop docks them in the layout when open (`hidden` when closed, not unmounted). Mobile slides them over the canvas with a scrim.
-- Canvas surface: `rounded-2xl` bordered panel, `bg-base`, fills remaining width. Children must be `w-full h-full` flex columns so home/empty states stay centered — never a row flex that shrinks content to the left.
+- Editor workspace: full-bleed canvas on `--bg-base` under the transparent navbar. No inset gap, canvas border, or card radius around the flow surface.
+- Sidebars: `absolute` overlay panels (`z-30`) with `rounded-2xl`, `bg-surface/95`, hairline `border-surface-border`, and `shadow-lg`. They float over the canvas and never shrink it. Closed state uses `translateX` fully off-screen (`calc(100% + 1.5rem)`), clipped by `overflow-hidden` on the workspace pane. Mobile adds a scrim behind the project sidebar.
+- Canvas surface: edge-to-edge `bg-base` with the dot grid. Children must be `w-full h-full` flex columns so home/empty states stay centered — never a row flex that shrinks content to the left.
 - Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
 
 ## Editor Chrome
 
-This is the locked visual language for `/editor` and `/editor/[roomId]`. Later canvas, Liveblocks, and AI work must compose inside it — do not flatten panels, restore a full-bleed navbar bar, or replace the dot grid.
+This is the locked visual language for `/editor` and `/editor/[roomId]`. Later canvas, Liveblocks, and AI work must compose inside it — do not restore a full-bleed filled navbar bar, or replace the dot grid. The canvas stays flush with the page background (Figma-style), not an inset card.
 
 ### Navbar
 
@@ -128,13 +128,13 @@ Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
 
 - Header: `Projects` + close.
 - Segmented **My Projects** / **Shared** tabs. The selected tab follows the current room: a shared room opens **Shared**; an owned room opens **My Projects**. Manual tab changes persist until the room changes.
-- Current room: cyan status dot + `bg-accent-dim` row.
-- Footer pinned: circular compass mark + pill **New Project** (`rounded-full`, cyan).
+- Current room: cyan status dot + `bg-accent-dim` row. Rename and delete sit inside that same highlighted row (no separate chip). Unselected rows still reveal actions on hover.
+- Footer pinned: full-width pill **New Project** (`rounded-full`, cyan). No compass mark.
 
 ### Home vs workspace
 
 - `/editor` (home): both sidebars **closed**. Create-project copy and CTA are centered in the canvas panel.
-- `/editor/[roomId]`: both sidebars **open** by default (docked on desktop).
+- `/editor/[roomId]`: the project sidebar is **open** by default. The AI Copilot panel stays **closed** until the navbar AI button is clicked.
 
 ### AI Copilot panel
 

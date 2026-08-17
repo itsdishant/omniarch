@@ -56,6 +56,24 @@ export function readOptionalId(body: unknown): string | undefined | Response {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export function readRequiredRoom(body: unknown): string | Response {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  if (!("room" in body) || typeof body.room !== "string") {
+    return Response.json({ error: "Room ID is required" }, { status: 400 });
+  }
+
+  const room = body.room.trim();
+
+  if (room === "") {
+    return Response.json({ error: "Room ID is required" }, { status: 400 });
+  }
+
+  return room;
+}
+
 export function readRequiredEmail(body: unknown): string | Response {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });

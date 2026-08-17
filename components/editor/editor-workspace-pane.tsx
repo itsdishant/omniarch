@@ -30,31 +30,30 @@ export function EditorWorkspacePane({
   const contentObscured = isMobile && (sidebarOpen || aiSidebarOpen);
 
   return (
-    <div className="relative flex min-h-0 flex-1 gap-2 px-2 pb-2">
+    <div className="relative min-h-0 flex-1 overflow-hidden bg-base">
       {sidebarOpen && isMobile ? (
         <button
           type="button"
           aria-label="Close sidebar"
-          className="absolute inset-0 z-10 bg-base/70 md:hidden"
+          className="absolute inset-0 z-20 bg-base/70 md:hidden"
           onClick={onSidebarClose}
         />
       ) : null}
+      <div
+        className="absolute inset-0 flex min-h-0 w-full flex-col bg-base"
+        inert={contentObscured}
+      >
+        {children}
+      </div>
       <ProjectSidebar
         currentRoomId={currentRoomId}
-        docked={!isMobile}
         isOpen={sidebarOpen}
         ownedProjects={ownedProjects}
         sharedProjects={sharedProjects}
         onClose={onSidebarClose}
       />
-      <div
-        className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden rounded-2xl border border-surface-border bg-base"
-        inert={contentObscured}
-      >
-        {children}
-      </div>
       {currentRoomId ? (
-        <AiSidebarPlaceholder docked={!isMobile} isOpen={aiSidebarOpen} />
+        <AiSidebarPlaceholder isOpen={aiSidebarOpen} />
       ) : null}
     </div>
   );
