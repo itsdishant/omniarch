@@ -6,20 +6,29 @@ import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { EditorWorkspacePane } from "@/components/editor/editor-workspace-pane";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-provider";
+import { ShareDialog } from "@/components/editor/share-dialog";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 interface EditorShellProps {
+  canManageShare?: boolean;
   children?: ReactNode;
+  currentRoomId?: string;
   ownedProjects: EditorProjectListItem[];
+  projectName?: string;
   sharedProjects: EditorProjectListItem[];
 }
 
 export function EditorShell({
+  canManageShare = false,
   children,
+  currentRoomId,
   ownedProjects,
+  projectName,
   sharedProjects,
 }: EditorShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => Boolean(currentRoomId));
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(() => Boolean(currentRoomId));
+  const [shareOpen, setShareOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
   function handleSidebarClose() {
@@ -29,22 +38,36 @@ export function EditorShell({
 
   return (
     <ProjectDialogsProvider>
-      <div className="flex min-h-screen flex-col bg-base">
+      <div className="flex h-svh flex-col bg-base">
         <EditorNavbar
+          aiSidebarOpen={aiSidebarOpen}
+          projectName={projectName}
           sidebarOpen={sidebarOpen}
           toggleRef={toggleRef}
+          onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
+          onShareClick={() => setShareOpen(true)}
           onSidebarToggle={() => setSidebarOpen((open) => !open)}
         />
         <EditorWorkspacePane
-          sidebarOpen={sidebarOpen}
-          onSidebarClose={handleSidebarClose}
+          aiSidebarOpen={aiSidebarOpen}
+          currentRoomId={currentRoomId}
           ownedProjects={ownedProjects}
           sharedProjects={sharedProjects}
+          sidebarOpen={sidebarOpen}
+          onSidebarClose={handleSidebarClose}
         >
           {children}
         </EditorWorkspacePane>
       </div>
       <ProjectDialogs />
+      {currentRoomId ? (
+        <ShareDialog
+          open={shareOpen}
+          projectId={currentRoomId}
+          canManage={canManageShare}
+          onOpenChange={setShareOpen}
+        />
+      ) : null}
     </ProjectDialogsProvider>
   );
 }

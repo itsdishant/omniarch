@@ -24,8 +24,10 @@
 ## Styling
 
 - Use CSS custom property tokens defined in `globals.css` — no raw Tailwind color classes like `zinc-*` or hardcoded hex values.
-- Reference tokens through their Tailwind utility names: `bg-base`, `text-copy-primary`, `border-surface-border`, `text-brand`, etc.
-- Maintain the border radius scale: `rounded-xl` for small elements, `rounded-2xl` for cards, `rounded-3xl` for modals.
+- Reference tokens through their Tailwind utility names: `bg-base`, `text-copy-primary`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
+- Maintain the radius scale in `ui-context.md`: `rounded-xl` for small UI, `rounded-2xl` for panels, `rounded-3xl` for modals, `rounded-full` for editor chrome CTAs (Share, AI, New Project).
+- Canvas surfaces use `.canvas-dots` (or React Flow dots with the same 20px gap). Do not use a line grid.
+- Follow `context/ui-context.md` for editor chrome. Do not flatten the inset panels, fill the navbar, or left-align home empty states.
 
 ## API Routes
 
