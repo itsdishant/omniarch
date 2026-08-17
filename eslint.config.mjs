@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
           public: ["app/sign-in/**", "app/sign-up/**"],
         },
       ],
+      "react-hooks/exhaustive-deps": [
+        "error",
+        { additionalHooks: "(useMutation)" },
+      ],
     },
   },
   // Override default ignores of eslint-config-next.

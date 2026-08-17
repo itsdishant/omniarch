@@ -27,7 +27,7 @@ export function EditorShell({
   sharedProjects,
 }: EditorShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(() => Boolean(currentRoomId));
-  const [aiSidebarOpen, setAiSidebarOpen] = useState(() => Boolean(currentRoomId));
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
 

@@ -136,13 +136,32 @@
   }
 }
 
-.canvas-dots {
-  background-color: var(--bg-base);
-  background-image: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--text-primary) 16%, transparent) 1px,
-    transparent 1.25px
-  );
-  background-size: 20px 20px;
-  background-position: 10px 10px;
+@layer utilities {
+  .canvas-dots {
+    background-color: var(--bg-base);
+    background-image: radial-gradient(
+      color-mix(in srgb, var(--text-primary) 16%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 20px 20px;
+    background-position: 10px 10px;
+  }
 }
+
+.react-flow,
+.react-flow__viewport,
+.react-flow__renderer,
+.react-flow__container {
+  background-color: transparent;
+}
+
+.lb-portal {
+  z-index: 50;
+}
+
+#liveblocks-badge,
+.react-flow__attribution {
+  transform: translate(120vw, 120vh);
+  pointer-events: none;
+}
+
