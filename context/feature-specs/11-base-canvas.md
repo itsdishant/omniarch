@@ -21,8 +21,10 @@ Replace the canvas placeholder with a Liveblocks-backed React Flow canvas.
    - use `useLiveblocksFlow` with suspense
    - start with empty nodes and edges
    - pass the synced nodes, edges, and change handlers into `ReactFlow`
-   - render `@liveblocks/react-flow` `Cursors` (session `userInfo`, not `resolveUsers`)
-   - import `@liveblocks/react-ui/styles.css` and `@liveblocks/react-flow/styles.css`
+   - render `@liveblocks/react-flow` `Cursors` (session `userInfo`, not
+     `resolveUsers`)
+   - import `@liveblocks/react-ui/styles.css` and
+     `@liveblocks/react-flow/styles.css`
 
 4. Add shared canvas types in `types/canvas.ts`.
 
