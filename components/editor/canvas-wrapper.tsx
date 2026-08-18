@@ -218,8 +218,11 @@ function CanvasFlow() {
   const { registerImporter } = useStarterTemplateImport();
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
-  nodesRef.current = nodes;
-  edgesRef.current = edges;
+
+  useEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+  }, [edges, nodes]);
 
   useKeyboardShortcuts({
     reactFlow,

@@ -36,6 +36,8 @@ export function EditorShell({
 
   useEffect(() => {
     if (currentRoomId) {
+      // This reset intentionally runs when entering a project room.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSidebarOpen(false);
     }
   }, [currentRoomId]);
