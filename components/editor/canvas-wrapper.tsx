@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
 import {
   ClientSideSuspense,
   LiveblocksProvider,
@@ -10,6 +11,7 @@ import {
   useErrorListener,
   useLostConnectionListener,
   useOther,
+  useOthers,
   useRedo,
   useUndo,
 } from "@liveblocks/react/suspense";
@@ -27,6 +29,8 @@ import {
   MarkerType,
   ReactFlow,
   ReactFlowProvider,
+  useEdges,
+  useNodes,
   useReactFlow,
   type DefaultEdgeOptions,
   type EdgeTypes,
@@ -58,6 +62,7 @@ import {
 import { useStarterTemplateImport } from "@/components/editor/starter-template-context";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useCanvasAutosave } from "@/hook/useCanvasAutosave";
 import type {
   CanvasEdge,
   CanvasNode,
@@ -182,6 +187,82 @@ function FlowCursor({ connectionId }: CursorsCursorProps) {
   return <Cursor color={info.color} label={info.name} />;
 }
 
+function ParticipantAvatars() {
+  const { userId } = useAuth();
+  const { user } = useUser();
+  const others = useOthers();
+  const collaborators = others.filter((other) => other.id !== userId);
+  const visibleCollaborators = collaborators.slice(0, 5);
+  const overflowCount = collaborators.length - visibleCollaborators.length;
+  const currentUserName = user?.fullName || user?.firstName || "You";
+  const currentUserInitials = currentUserName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="pointer-events-auto absolute right-4 top-4 z-30 flex items-center rounded-full border border-surface-border bg-elevated/90 p-1.5 shadow-lg backdrop-blur-sm">
+      <div className="flex items-center">
+        {visibleCollaborators.map((other, index) => {
+          const name = other.info.name || "Collaborator";
+          const initials = name
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((part) => part[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
+
+          return (
+            <div
+              key={other.connectionId}
+              aria-label={name}
+              className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-base text-[10px] font-semibold text-copy-primary ring-1 ring-white/15"
+              style={{
+                backgroundColor: other.info.color,
+                marginLeft: index === 0 ? 0 : -8,
+                zIndex: visibleCollaborators.length - index,
+              }}
+            >
+              {other.info.avatar ? (
+                // Liveblocks user metadata is supplied by the authenticated session.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={other.info.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
+            </div>
+          );
+        })}
+        {overflowCount > 0 ? (
+          <div className="relative z-0 ml-1 flex h-8 min-w-8 items-center justify-center rounded-full border-2 border-base bg-surface px-1.5 text-[10px] font-semibold text-copy-secondary ring-1 ring-white/15">
+            +{overflowCount}
+          </div>
+        ) : null}
+      </div>
+      {collaborators.length > 0 ? (
+        <div className="mx-2 h-6 w-px bg-surface-border" aria-hidden="true" />
+      ) : null}
+      <div
+        aria-label={currentUserName}
+        title={currentUserName}
+        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border-2 border-base bg-subtle text-[10px] font-semibold text-copy-primary ring-1 ring-white/15"
+      >
+        {user?.imageUrl ? (
+          // Clerk's current user image is display-only in the canvas presence group.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.imageUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          currentUserInitials
+        )}
+      </div>
+    </div>
+  );
+}
+
 const defaultEdgeOptions: DefaultEdgeOptions = {
   type: "canvasEdge",
   markerEnd: {
@@ -202,7 +283,7 @@ const canvasEdgeTypes: EdgeTypes = {
   canvasEdge: CanvasEdgeComponent,
 };
 
-function CanvasFlow() {
+function CanvasFlow({ projectId }: { projectId: string }) {
   const reactFlow = useReactFlow<CanvasNode, CanvasEdge>();
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = reactFlow;
   const undo = useUndo();
@@ -216,6 +297,16 @@ function CanvasFlow() {
       edges: { initial: [] },
     });
   const { registerImporter } = useStarterTemplateImport();
+  const selectedNodes = useNodes<CanvasNode>().filter((node) => node.selected);
+  const selectedEdges = useEdges<CanvasEdge>().filter((edge) => edge.selected);
+  const loadCanvas = useCallback(
+    (savedNodes: CanvasNode[], savedEdges: CanvasEdge[]) => {
+      onNodesChange(savedNodes.map((item) => ({ type: "add" as const, item })));
+      onEdgesChange(savedEdges.map((item) => ({ type: "add" as const, item })));
+    },
+    [onEdgesChange, onNodesChange],
+  );
+  useCanvasAutosave({ projectId, nodes, edges, onLoad: loadCanvas });
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
 
@@ -229,6 +320,25 @@ function CanvasFlow() {
     undo,
     redo,
   });
+
+  useEffect(() => {
+    function handleDeleteKey(event: KeyboardEvent) {
+      if (
+        event.target instanceof Element &&
+        event.target.closest("input, textarea, [contenteditable='true']")
+      ) {
+        return;
+      }
+      if (event.key !== "Delete" && event.key !== "Backspace") return;
+      if (selectedNodes.length === 0 && selectedEdges.length === 0) return;
+
+      event.preventDefault();
+      onDelete({ nodes: selectedNodes, edges: selectedEdges });
+    }
+
+    window.addEventListener("keydown", handleDeleteKey);
+    return () => window.removeEventListener("keydown", handleDeleteKey);
+  }, [onDelete, selectedEdges, selectedNodes]);
 
   const handleZoomIn = useCallback(() => {
     zoomIn({ duration: CANVAS_ZOOM_DURATION });
@@ -441,6 +551,12 @@ function CanvasFlow() {
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, shape: CanvasShape) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      e.dataTransfer.setDragImage(
+        e.currentTarget,
+        e.clientX - rect.left,
+        e.clientY - rect.top,
+      );
       setDragPreview({ shape, clientX: e.clientX, clientY: e.clientY });
     },
     [],
@@ -489,8 +605,16 @@ function CanvasFlow() {
       }
 
       const { shape, width, height } = payload;
-      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const cursorPosition = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const position = {
+        x: cursorPosition.x - width / 2,
+        y: cursorPosition.y - height / 2,
+      };
       const nodeId = crypto.randomUUID();
+
+      if (nodesRef.current.length === 0 && edgesRef.current.length === 0) {
+        didInitialFit.current = true;
+      }
 
       const newNode: CanvasNode = {
         id: nodeId,
@@ -573,6 +697,7 @@ function CanvasFlow() {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onDelete={onDelete}
+            deleteKeyCode={null}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             nodeTypes={canvasNodeTypes}
@@ -588,6 +713,7 @@ function CanvasFlow() {
           </ReactFlow>
         </EdgeActionsContext.Provider>
       </NodeActionsContext.Provider>
+      <ParticipantAvatars />
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center px-4">
         <div className="pointer-events-auto">
           <CanvasControls
@@ -609,11 +735,11 @@ function CanvasFlow() {
   );
 }
 
-function CanvasContent() {
+function CanvasContent({ projectId }: { projectId: string }) {
   return (
     <ReactFlowProvider>
       <RoomConnectionStatus />
-      <CanvasFlow />
+      <CanvasFlow projectId={projectId} />
     </ReactFlowProvider>
   );
 }
@@ -635,12 +761,12 @@ export function CanvasWrapper({ roomId }: CanvasWrapperProps) {
     >
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, isThinking: false }}
+        initialPresence={{ cursor: null, thinking: false }}
         initialStorage={initialStorage}
       >
         <ErrorBoundary fallback={<CanvasErrorFallback />}>
           <ClientSideSuspense fallback={<CanvasLoadingFallback />}>
-            <CanvasContent />
+            <CanvasContent projectId={roomId} />
           </ClientSideSuspense>
         </ErrorBoundary>
       </RoomProvider>

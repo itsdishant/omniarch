@@ -60,3 +60,10 @@ Blob, and the saved blob URL should be stored on the Prisma project record.
 - Saved canvas does not load if the room already has
   active nodes or edges
 - `npm run build` passes.
+
+## Follow-up Workspace Behavior
+
+- The workspace navbar includes a `Close` pill immediately before `Save`.
+- `Close` navigates back to `/editor`.
+- `Close` is disabled while a canvas save is in progress or has an error, and
+  is enabled again when the canvas is saved/idle.

@@ -18,6 +18,7 @@ import {
   useStarterTemplateImport,
 } from "@/components/editor/starter-template-context";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import { CanvasSaveStatusProvider } from "@/hook/useCanvasAutosave";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 interface EditorShellProps {
@@ -57,8 +58,9 @@ export function EditorShell({
   }
 
   return (
-    <ProjectDialogsProvider>
-      <StarterTemplateProvider>
+    <CanvasSaveStatusProvider>
+      <ProjectDialogsProvider>
+        <StarterTemplateProvider>
         <EditorShellChrome
           aiSidebarOpen={aiSidebarOpen}
           canManageShare={canManageShare}
@@ -71,15 +73,17 @@ export function EditorShell({
           templatesOpen={templatesOpen}
           toggleRef={toggleRef}
           onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
+          onAiSidebarClose={() => setAiSidebarOpen(false)}
           onShareOpenChange={setShareOpen}
           onSidebarClose={handleSidebarClose}
           onSidebarToggle={() => setSidebarOpen((open) => !open)}
           onTemplatesOpenChange={setTemplatesOpen}
         >
           {children}
-        </EditorShellChrome>
-      </StarterTemplateProvider>
-    </ProjectDialogsProvider>
+          </EditorShellChrome>
+        </StarterTemplateProvider>
+      </ProjectDialogsProvider>
+    </CanvasSaveStatusProvider>
   );
 }
 
@@ -96,6 +100,7 @@ interface EditorShellChromeProps {
   templatesOpen: boolean;
   toggleRef: RefObject<HTMLButtonElement | null>;
   onAiSidebarToggle: () => void;
+  onAiSidebarClose: () => void;
   onShareOpenChange: (open: boolean) => void;
   onSidebarClose: () => void;
   onSidebarToggle: () => void;
@@ -115,6 +120,7 @@ function EditorShellChrome({
   templatesOpen,
   toggleRef,
   onAiSidebarToggle,
+  onAiSidebarClose,
   onShareOpenChange,
   onSidebarClose,
   onSidebarToggle,
@@ -142,6 +148,7 @@ function EditorShellChrome({
           sharedProjects={sharedProjects}
           sidebarOpen={sidebarOpen}
           onSidebarClose={onSidebarClose}
+          onAiSidebarClose={onAiSidebarClose}
         >
           {children}
         </EditorWorkspacePane>

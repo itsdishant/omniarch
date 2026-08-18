@@ -62,24 +62,24 @@ function ProjectListItem({
   const isCurrentRoom = currentRoomId === project.id;
 
   return (
-    <li className="group px-2 py-0.5">
+    <li className="group px-2 py-1">
       <div
         className={cn(
-          "flex items-center rounded-xl",
+          "flex items-center rounded-xl border transition-colors",
           isCurrentRoom
-            ? "bg-accent-dim text-copy-primary"
-            : "text-copy-primary hover:bg-subtle",
+            ? "border-brand/30 bg-accent-dim text-copy-primary"
+            : "border-surface-border/70 bg-elevated/45 text-copy-secondary hover:border-brand/30 hover:bg-subtle hover:text-copy-primary",
         )}
       >
         <Link
           href={`/editor/${encodeURIComponent(project.id)}`}
           aria-current={isCurrentRoom ? "page" : undefined}
-          className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-sm"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-[inherit] px-2.5 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
         >
           <span
             className={cn(
               "h-1.5 w-1.5 shrink-0 rounded-full",
-              isCurrentRoom ? "bg-brand" : "bg-transparent",
+              isCurrentRoom ? "bg-brand" : "bg-copy-faint",
             )}
           />
           <span className="truncate">{project.name}</span>
@@ -97,7 +97,7 @@ function ProjectListItem({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="bg-transparent hover:bg-transparent"
+              className="text-copy-muted hover:bg-subtle hover:text-copy-primary"
               aria-label={`Rename ${project.name}`}
               onClick={() => openRename(project)}
             >
@@ -107,7 +107,7 @@ function ProjectListItem({
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="bg-transparent hover:bg-transparent"
+              className="text-copy-muted hover:bg-subtle hover:text-copy-primary"
               aria-label={`Delete ${project.name}`}
               onClick={() => openDelete(project)}
             >

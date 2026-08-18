@@ -16,10 +16,6 @@ function resolveProjectName(name: string | undefined): string {
   return trimmed ? trimmed : DEFAULT_PROJECT_NAME;
 }
 
-function canvasPathFor(projectId: string): string {
-  return `canvas/${projectId}.json`;
-}
-
 export interface EditorProjectListItem {
   id: string;
   name: string;
@@ -80,18 +76,10 @@ export async function createOwnedProject(
       ownerId,
       name: resolveProjectName(input.name),
       status: ProjectStatus.DRAFT,
-      canvasJsonPath: input.id ? canvasPathFor(input.id) : "",
+      canvasJsonPath: "",
     },
   });
-
-  if (project.canvasJsonPath !== "") {
-    return project;
-  }
-
-  return prisma.project.update({
-    where: { id: project.id },
-    data: { canvasJsonPath: canvasPathFor(project.id) },
-  });
+  return project;
 }
 
 export async function findProjectById(projectId: string) {
