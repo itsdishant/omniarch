@@ -14,7 +14,7 @@ Add resizing and inline label editing to canvas nodes.
    - double-click the center/label area of a node to edit its label
    - show placeholder text in the same centered position when the label is empty
    - keep editing smooth without causing layout shifts
-   - show a textarea directly over the label while editing
+   - show a single-line input directly over the label while editing
    - update the label as users type
    - close editing on blur or `Escape`
    - prevent text editing interactions from dragging or panning the canvas

@@ -20,6 +20,8 @@ interface DialogPatternProps {
   footer?: ReactNode;
   children?: ReactNode;
   className?: string;
+  titleClassName?: string;
+  descriptionClassName?: string;
 }
 
 export function DialogPattern({
@@ -30,6 +32,8 @@ export function DialogPattern({
   footer,
   children,
   className,
+  titleClassName,
+  descriptionClassName,
 }: DialogPatternProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,9 +44,13 @@ export function DialogPattern({
         )}
       >
         <DialogHeader>
-          <DialogTitle className="text-copy-primary">{title}</DialogTitle>
+          <DialogTitle className={cn("text-copy-primary", titleClassName)}>
+            {title}
+          </DialogTitle>
           {description ? (
-            <DialogDescription className="text-copy-muted">
+            <DialogDescription
+              className={cn("text-copy-muted", descriptionClassName)}
+            >
               {description}
             </DialogDescription>
           ) : null}

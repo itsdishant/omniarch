@@ -1,12 +1,14 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { EditorWorkspacePane } from "@/components/editor/editor-workspace-pane";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-provider";
 import { ShareDialog } from "@/components/editor/share-dialog";
+import { StarterTemplateProvider, useStarterTemplateImport } from "@/components/editor/starter-template-context";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 interface EditorShellProps {
@@ -26,10 +28,17 @@ export function EditorShell({
   projectName,
   sharedProjects,
 }: EditorShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(() => Boolean(currentRoomId));
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (currentRoomId) {
+      setSidebarOpen(false);
+    }
+  }, [currentRoomId]);
 
   function handleSidebarClose() {
     setSidebarOpen(false);
@@ -38,15 +47,82 @@ export function EditorShell({
 
   return (
     <ProjectDialogsProvider>
+      <StarterTemplateProvider>
+        <EditorShellChrome
+          aiSidebarOpen={aiSidebarOpen}
+          canManageShare={canManageShare}
+          currentRoomId={currentRoomId}
+          ownedProjects={ownedProjects}
+          projectName={projectName}
+          shareOpen={shareOpen}
+          sharedProjects={sharedProjects}
+          sidebarOpen={sidebarOpen}
+          templatesOpen={templatesOpen}
+          toggleRef={toggleRef}
+          onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
+          onShareOpenChange={setShareOpen}
+          onSidebarClose={handleSidebarClose}
+          onSidebarToggle={() => setSidebarOpen((open) => !open)}
+          onTemplatesOpenChange={setTemplatesOpen}
+        >
+          {children}
+        </EditorShellChrome>
+      </StarterTemplateProvider>
+    </ProjectDialogsProvider>
+  );
+}
+
+interface EditorShellChromeProps {
+  aiSidebarOpen: boolean;
+  canManageShare: boolean;
+  children?: ReactNode;
+  currentRoomId?: string;
+  ownedProjects: EditorProjectListItem[];
+  projectName?: string;
+  shareOpen: boolean;
+  sharedProjects: EditorProjectListItem[];
+  sidebarOpen: boolean;
+  templatesOpen: boolean;
+  toggleRef: RefObject<HTMLButtonElement | null>;
+  onAiSidebarToggle: () => void;
+  onShareOpenChange: (open: boolean) => void;
+  onSidebarClose: () => void;
+  onSidebarToggle: () => void;
+  onTemplatesOpenChange: (open: boolean) => void;
+}
+
+function EditorShellChrome({
+  aiSidebarOpen,
+  canManageShare,
+  children,
+  currentRoomId,
+  ownedProjects,
+  projectName,
+  shareOpen,
+  sharedProjects,
+  sidebarOpen,
+  templatesOpen,
+  toggleRef,
+  onAiSidebarToggle,
+  onShareOpenChange,
+  onSidebarClose,
+  onSidebarToggle,
+  onTemplatesOpenChange,
+}: EditorShellChromeProps) {
+  const { importTemplate } = useStarterTemplateImport();
+
+  return (
+    <>
       <div className="flex h-svh flex-col bg-base">
         <EditorNavbar
           aiSidebarOpen={aiSidebarOpen}
           projectName={projectName}
           sidebarOpen={sidebarOpen}
           toggleRef={toggleRef}
-          onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
-          onShareClick={() => setShareOpen(true)}
-          onSidebarToggle={() => setSidebarOpen((open) => !open)}
+          onAiSidebarToggle={onAiSidebarToggle}
+          onShareClick={() => onShareOpenChange(true)}
+          onSidebarToggle={onSidebarToggle}
+          onTemplatesClick={() => onTemplatesOpenChange(true)}
         />
         <EditorWorkspacePane
           aiSidebarOpen={aiSidebarOpen}
@@ -54,20 +130,27 @@ export function EditorShell({
           ownedProjects={ownedProjects}
           sharedProjects={sharedProjects}
           sidebarOpen={sidebarOpen}
-          onSidebarClose={handleSidebarClose}
+          onSidebarClose={onSidebarClose}
         >
           {children}
         </EditorWorkspacePane>
       </div>
       <ProjectDialogs />
       {currentRoomId ? (
-        <ShareDialog
-          open={shareOpen}
-          projectId={currentRoomId}
-          canManage={canManageShare}
-          onOpenChange={setShareOpen}
-        />
+        <>
+          <ShareDialog
+            open={shareOpen}
+            projectId={currentRoomId}
+            canManage={canManageShare}
+            onOpenChange={onShareOpenChange}
+          />
+          <StarterTemplatesModal
+            open={templatesOpen}
+            onOpenChange={onTemplatesOpenChange}
+            onImport={importTemplate}
+          />
+        </>
       ) : null}
-    </ProjectDialogsProvider>
+    </>
   );
 }

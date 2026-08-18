@@ -25,16 +25,6 @@ export interface EditorProjectListItem {
   name: string;
 }
 
-export function toEditorProjectListItem(project: {
-  id: string;
-  name: string;
-}): EditorProjectListItem {
-  return {
-    id: project.id,
-    name: project.name,
-  };
-}
-
 export async function listOwnedProjects(ownerId: string) {
   return prisma.project.findMany({
     where: { ownerId },
@@ -70,8 +60,8 @@ export async function listEditorSidebarProjects(
   ]);
 
   return {
-    ownedProjects: ownedProjects.map(toEditorProjectListItem),
-    sharedProjects: sharedProjects.map(toEditorProjectListItem),
+    ownedProjects: ownedProjects.map((p) => ({ id: p.id, name: p.name })),
+    sharedProjects: sharedProjects.map((p) => ({ id: p.id, name: p.name })),
   };
 }
 
