@@ -7,6 +7,7 @@ import {
   inviteProjectCollaborator,
   listProjectCollaborators,
 } from "@/lib/collaborators";
+import { getClerkProfileByUserId } from "@/lib/clerk-profiles";
 import {
   findAccessibleProjectForViewer,
   getCurrentClerkIdentity,
@@ -77,9 +78,31 @@ export async function GET(
     await listProjectCollaborators(projectId),
   );
 
+  let owner: {
+    id: string;
+    email: string;
+    displayName: string | null;
+    imageUrl: string | null;
+  } | null = null;
+
+  try {
+    const profile = await getClerkProfileByUserId(accessed.project.ownerId);
+    if (profile) {
+      owner = {
+        id: accessed.project.ownerId,
+        email: profile.email ?? "",
+        displayName: profile.displayName,
+        imageUrl: profile.imageUrl,
+      };
+    }
+  } catch {
+    owner = null;
+  }
+
   return Response.json({
     collaborators,
     canManage: accessed.project.ownerId === accessed.identity.userId,
+    owner,
   });
 }
 

@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ClientSideSuspense,
   LiveblocksProvider,
   RoomProvider,
+  useCanRedo,
+  useCanUndo,
   useErrorListener,
   useLostConnectionListener,
   useOther,
+  useRedo,
+  useUndo,
 } from "@liveblocks/react/suspense";
 import {
   Cursors,
@@ -18,28 +22,55 @@ import { Cursor } from "@liveblocks/react-ui";
 import {
   Background,
   BackgroundVariant,
+  ConnectionLineType,
   ConnectionMode,
-  Controls,
-  Handle,
-  MiniMap,
-  Position,
+  MarkerType,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  type NodeTypes,
+  type DefaultEdgeOptions,
+  type EdgeTypes,
 } from "@xyflow/react";
 import { ErrorBoundary } from "react-error-boundary";
+import { LiveMap, LiveObject } from "@liveblocks/core";
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-ui/styles.css";
 import "@liveblocks/react-flow/styles.css";
 
-import { LiveObject, LiveMap } from "@liveblocks/core";
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
-import { DEFAULT_NODE_COLOR } from "@/types/canvas";
+import {
+  CanvasControls,
+  CANVAS_ZOOM_DURATION,
+} from "@/components/editor/canvas-controls";
+import {
+  CanvasEdgeComponent,
+  EdgeActionsContext,
+} from "@/components/editor/canvas-edge";
+import {
+  canvasNodeTypes,
+  NodeActionsContext,
+  resolveNodeSize,
+} from "@/components/editor/canvas-node";
+import { renderShapeContent } from "@/components/editor/canvas-shapes";
 import {
   ShapePanel,
   readShapeDragPayload,
 } from "@/components/editor/shape-panel";
+import { useStarterTemplateImport } from "@/components/editor/starter-template-context";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import type {
+  CanvasEdge,
+  CanvasNode,
+  CanvasShape,
+  NodeColorPair,
+} from "@/types/canvas";
+import {
+  DEFAULT_EDGE_COLOR,
+  DEFAULT_EDGE_STROKE_WIDTH,
+  DEFAULT_NODE_COLOR,
+  DEFAULT_NODE_TEXT_COLOR,
+  DEFAULT_SHAPE_SIZES,
+} from "@/types/canvas";
 
 interface CanvasWrapperProps {
   roomId: string;
@@ -151,69 +182,306 @@ function FlowCursor({ connectionId }: CursorsCursorProps) {
   return <Cursor color={info.color} label={info.name} />;
 }
 
-function CanvasNodeComponent({ data }: { data: CanvasNode["data"] }) {
-  const { label, color, shape } = data;
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  type: "canvasEdge",
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    color: DEFAULT_EDGE_COLOR,
+    width: 16,
+    height: 16,
+  },
+  style: {
+    stroke: DEFAULT_EDGE_COLOR,
+    strokeWidth: DEFAULT_EDGE_STROKE_WIDTH,
+    strokeLinecap: "round",
+  },
+  data: { label: "" },
+};
 
-  return (
-    <div className="group relative h-full w-full">
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
-      />
-      <Handle
-        type="target"
-        position={Position.Bottom}
-        className="h-2.5 w-2.5 rounded-full border border-surface bg-primary opacity-0 transition-opacity group-hover:opacity-100"
-      />
-      <div
-        className="flex h-full w-full items-center justify-center rounded-md border-2"
-        style={{
-          borderColor: color,
-          backgroundColor: `${color}15`,
-          color: color,
-        }}
-      >
-        <span className="max-w-full truncate px-3 py-1.5 text-sm font-medium">
-          {label || shape}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-const canvasNodeTypes: NodeTypes = {
-  canvasNode: CanvasNodeComponent,
+const canvasEdgeTypes: EdgeTypes = {
+  canvasEdge: CanvasEdgeComponent,
 };
 
 function CanvasFlow() {
-  const { screenToFlowPosition } = useReactFlow<CanvasNode, CanvasEdge>();
+  const reactFlow = useReactFlow<CanvasNode, CanvasEdge>();
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = reactFlow;
+  const undo = useUndo();
+  const redo = useRedo();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onDelete } =
     useLiveblocksFlow<CanvasNode, CanvasEdge>({
       suspense: true,
       nodes: { initial: [] },
       edges: { initial: [] },
     });
+  const { registerImporter } = useStarterTemplateImport();
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+
+  useEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+  }, [edges, nodes]);
+
+  useKeyboardShortcuts({
+    reactFlow,
+    undo,
+    redo,
+  });
+
+  const handleZoomIn = useCallback(() => {
+    zoomIn({ duration: CANVAS_ZOOM_DURATION });
+  }, [zoomIn]);
+
+  const handleZoomOut = useCallback(() => {
+    zoomOut({ duration: CANVAS_ZOOM_DURATION });
+  }, [zoomOut]);
+
+  const handleFitView = useCallback(() => {
+    fitView({ duration: CANVAS_ZOOM_DURATION, padding: 0.2 });
+  }, [fitView]);
+
+  const handleImportTemplate = useCallback(
+    (template: CanvasTemplate) => {
+      const currentNodes = nodesRef.current;
+      const currentEdges = edgesRef.current;
+
+      if (currentEdges.length > 0) {
+        onEdgesChange(
+          currentEdges.map((edge) => ({
+            type: "remove" as const,
+            id: edge.id,
+          })),
+        );
+      }
+      if (currentNodes.length > 0) {
+        onNodesChange(
+          currentNodes.map((node) => ({
+            type: "remove" as const,
+            id: node.id,
+          })),
+        );
+      }
+
+      onNodesChange(
+        template.nodes.map((item) => ({
+          type: "add" as const,
+          item: structuredClone(item),
+        })),
+      );
+      onEdgesChange(
+        template.edges.map((item) => ({
+          type: "add" as const,
+          item: structuredClone(item),
+        })),
+      );
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          fitView({ duration: CANVAS_ZOOM_DURATION, padding: 0.2 });
+        });
+      });
+    },
+    [fitView, onEdgesChange, onNodesChange],
+  );
+
+  useEffect(() => {
+    registerImporter(handleImportTemplate);
+    return () => registerImporter(null);
+  }, [handleImportTemplate, registerImporter]);
+
+  const didInitialFit = useRef(false);
+  useEffect(() => {
+    if (didInitialFit.current) {
+      return;
+    }
+
+    if (nodes.length === 0) {
+      const timeout = window.setTimeout(() => {
+        if (didInitialFit.current || nodesRef.current.length > 0) {
+          return;
+        }
+        fitView({ duration: CANVAS_ZOOM_DURATION, padding: 0.2 });
+        didInitialFit.current = true;
+      }, 0);
+      return () => window.clearTimeout(timeout);
+    }
+
+    const unmeasured = nodes.some(
+      (node) =>
+        typeof node.width !== "number" || typeof node.height !== "number",
+    );
+    if (unmeasured) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      fitView({ duration: CANVAS_ZOOM_DURATION, padding: 0.2 });
+      didInitialFit.current = true;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [fitView, nodes]);
+
+  const handleLabelChange = useCallback(
+    (nodeId: string, label: string) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      onNodesChange([
+        {
+          type: "replace",
+          id: nodeId,
+          item: {
+            ...node,
+            data: { ...node.data, label },
+          },
+        },
+      ]);
+    },
+    [onNodesChange, nodes],
+  );
+
+  const handleColorChange = useCallback(
+    (nodeId: string, pair: NodeColorPair) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      onNodesChange([
+        {
+          type: "replace",
+          id: nodeId,
+          item: {
+            ...node,
+            data: {
+              ...node.data,
+              color: pair.fill,
+              textColor: pair.text,
+            },
+          },
+        },
+      ]);
+    },
+    [onNodesChange, nodes],
+  );
+
+  const handleEdgeLabelChange = useCallback(
+    (edgeId: string, label: string) => {
+      const edge = edges.find((item) => item.id === edgeId);
+      if (!edge) return;
+      onEdgesChange([
+        {
+          type: "replace",
+          id: edgeId,
+          item: {
+            ...edge,
+            type: "canvasEdge",
+            data: { ...edge.data, label },
+          },
+        },
+      ]);
+    },
+    [onEdgesChange, edges],
+  );
+
+  const hydratedMissingSize = useRef(false);
+  useEffect(() => {
+    if (hydratedMissingSize.current || nodes.length === 0) {
+      return;
+    }
+    const changes = nodes.flatMap((node) => {
+      if (typeof node.width === "number" && typeof node.height === "number") {
+        return [];
+      }
+      const defaults = DEFAULT_SHAPE_SIZES[node.data.shape] ?? {
+        width: 200,
+        height: 100,
+      };
+      const width = resolveNodeSize(
+        node.style?.width ?? node.width,
+        defaults.width,
+      );
+      const height = resolveNodeSize(
+        node.style?.height ?? node.height,
+        defaults.height,
+      );
+      return [
+        {
+          type: "replace" as const,
+          id: node.id,
+          item: {
+            ...node,
+            width,
+            height,
+            style: { ...node.style, width, height },
+          },
+        },
+      ];
+    });
+    hydratedMissingSize.current = true;
+    if (changes.length > 0) {
+      onNodesChange(changes);
+    }
+  }, [nodes, onNodesChange]);
+
+  const [dragPreview, setDragPreview] = useState<{
+    shape: CanvasShape;
+    clientX: number;
+    clientY: number;
+  } | null>(null);
+  const draggingShape = Boolean(dragPreview);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
+    setDragPreview((current) =>
+      current
+        ? { ...current, clientX: e.clientX, clientY: e.clientY }
+        : current,
+    );
   }, []);
+
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, shape: CanvasShape) => {
+      setDragPreview({ shape, clientX: e.clientX, clientY: e.clientY });
+    },
+    [],
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setDragPreview(null);
+  }, []);
+
+  useEffect(() => {
+    if (!draggingShape) {
+      return;
+    }
+
+    function onWindowDragOver(event: DragEvent) {
+      setDragPreview((current) =>
+        current
+          ? { ...current, clientX: event.clientX, clientY: event.clientY }
+          : current,
+      );
+    }
+
+    function onWindowDragEnd() {
+      setDragPreview(null);
+    }
+
+    window.addEventListener("dragover", onWindowDragOver);
+    window.addEventListener("dragend", onWindowDragEnd);
+    window.addEventListener("drop", onWindowDragEnd);
+    return () => {
+      window.removeEventListener("dragover", onWindowDragOver);
+      window.removeEventListener("dragend", onWindowDragEnd);
+      window.removeEventListener("drop", onWindowDragEnd);
+    };
+  }, [draggingShape]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      setDragPreview(null);
 
       const payload = readShapeDragPayload(e.dataTransfer);
       if (!payload) {
@@ -228,9 +496,12 @@ function CanvasFlow() {
         id: nodeId,
         type: "canvasNode",
         position,
+        width,
+        height,
         data: {
           label: "",
           color: DEFAULT_NODE_COLOR,
+          textColor: DEFAULT_NODE_TEXT_COLOR,
           shape,
         },
         style: {
@@ -244,46 +515,96 @@ function CanvasFlow() {
     [onNodesChange, screenToFlowPosition],
   );
 
+  const dragPreviewElement = dragPreview ? (
+    <div
+      className="pointer-events-none fixed z-50 opacity-60"
+      style={{
+        left: dragPreview.clientX,
+        top: dragPreview.clientY,
+        transform: "translate(-50%, -50%)",
+      }}
+    >
+      {renderShapeContent({
+        shape: dragPreview.shape,
+        width: DEFAULT_SHAPE_SIZES[dragPreview.shape].width,
+        height: DEFAULT_SHAPE_SIZES[dragPreview.shape].height,
+        fill: DEFAULT_NODE_COLOR,
+        textColor: DEFAULT_NODE_TEXT_COLOR,
+        selected: false,
+        label: "",
+        hideLabel: true,
+      })}
+    </div>
+  ) : null;
+
   return (
     <div
       className="relative h-full min-h-0 w-full flex-1 bg-base"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onDragEnd={handleDragEnd}
     >
-      <ReactFlow
-        className="h-full min-h-0 w-full bg-base"
-        colorMode="dark"
-        fitView
-        connectionMode={ConnectionMode.Loose}
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onDelete={onDelete}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        nodeTypes={canvasNodeTypes}
+      <NodeActionsContext.Provider
+        value={{
+          onLabelChange: handleLabelChange,
+          onColorChange: handleColorChange,
+        }}
       >
-        <Background
-          variant={BackgroundVariant.Dots}
-          color="color-mix(in srgb, var(--text-primary) 16%, transparent)"
-          gap={20}
-          size={1}
-        />
-        <Controls />
-        <MiniMap
-          nodeColor={(node) => {
-            const canvasNode = node as CanvasNode;
-            return canvasNode.data?.color || DEFAULT_NODE_COLOR;
-          }}
-          nodeBorderRadius={4}
-          nodeStrokeWidth={1.5}
-          maskColor="color-mix(in srgb, var(--bg-base) 80%, transparent)"
-        />
-        <Cursors components={{ Cursor: FlowCursor }} />
-      </ReactFlow>
-      <ShapePanel />
+        <EdgeActionsContext.Provider
+          value={{ onLabelChange: handleEdgeLabelChange }}
+        >
+          <ReactFlow
+            className="h-full min-h-0 w-full bg-base"
+            colorMode="dark"
+            fitView
+            fitViewOptions={{ padding: 0.2, duration: CANVAS_ZOOM_DURATION }}
+            connectionMode={ConnectionMode.Loose}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            connectionLineStyle={{
+              stroke: DEFAULT_EDGE_COLOR,
+              strokeWidth: DEFAULT_EDGE_STROKE_WIDTH,
+              strokeLinecap: "round",
+              opacity: 0.7,
+            }}
+            defaultEdgeOptions={defaultEdgeOptions}
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onDelete={onDelete}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            nodeTypes={canvasNodeTypes}
+            edgeTypes={canvasEdgeTypes}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              color="color-mix(in srgb, var(--text-primary) 16%, transparent)"
+              gap={20}
+              size={1}
+            />
+            <Cursors components={{ Cursor: FlowCursor }} />
+          </ReactFlow>
+        </EdgeActionsContext.Provider>
+      </NodeActionsContext.Provider>
+      <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex items-center px-4">
+        <div className="pointer-events-auto">
+          <CanvasControls
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onFitView={handleFitView}
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        </div>
+        <div className="pointer-events-auto absolute left-1/2 -translate-x-1/2">
+          <ShapePanel onDragStart={handleDragStart} />
+        </div>
+      </div>
+      {dragPreviewElement}
     </div>
   );
 }

@@ -35,13 +35,14 @@ export function EditorWorkspacePane({
         <button
           type="button"
           aria-label="Close sidebar"
-          className="absolute inset-0 z-[25] bg-base/70 md:hidden"
+          className="absolute inset-0 z-25 bg-base/70 md:hidden"
           onClick={onSidebarClose}
         />
       ) : null}
       <div
-        className="absolute inset-0 flex min-h-0 w-full flex-col bg-base"
+        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? 'pointer-events-none' : ''}`}
         inert={contentObscured}
+        aria-hidden={contentObscured}
       >
         {children}
       </div>

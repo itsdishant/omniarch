@@ -9,7 +9,6 @@ import {
   createOwnedProject,
   isUniqueConstraintError,
   listOwnedProjects,
-  toEditorProjectListItem,
 } from "@/lib/projects";
 
 export async function GET() {
@@ -19,7 +18,9 @@ export async function GET() {
   }
 
   const projects = await listOwnedProjects(userId);
-  return Response.json({ projects: projects.map(toEditorProjectListItem) });
+  return Response.json({
+    projects: projects.map((p) => ({ id: p.id, name: p.name })),
+  });
 }
 
 export async function POST(request: Request) {

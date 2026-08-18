@@ -16,7 +16,7 @@ on building out the sidebar UI inside it.
 
 2. Add the sidebar header.
    - title: `AI Workspace`
-   - subtitle: `Collaborate with Ghost AI`
+   - subtitle: `Collaborate with OmniArch`
    - small bot icon
    - close button aligned to the right
    - use `text-primary-text` for the title
@@ -42,9 +42,9 @@ on building out the sidebar UI inside it.
      - `Build a CI/CD pipeline`
    - style starter chips as soft pills using `bg-subtle` and `text-accent-text`
    - user messages should be right-aligned with `bg-brand-dim border-brand/50
-     border-2 text-copy-primary`
+border-2 text-copy-primary`
    - assistant messages should be left-aligned with `bg-elevated border
-     border-surface-border text-accent-text`
+border-surface-border text-accent-text`
    - input area with an auto-resizing textarea, around 72px min height and 160px
      max height
    - send button should use `bg-accent text-white`

@@ -48,7 +48,7 @@ Radius increases with surface depth — smaller for inner elements, larger for o
 | Modal / overlay                 | `rounded-3xl`  |
 | Editor chrome CTAs              | `rounded-full` |
 
-Chrome CTAs are pill-shaped: navbar **Share** and **AI**, sidebar **New Project**. Do not restyle those back to rectangular buttons.
+Chrome CTAs are pill-shaped: navbar **Templates**, **Share**, and **AI**, sidebar **New Project**. Do not restyle those back to rectangular buttons.
 
 ## Canvas
 
@@ -121,7 +121,7 @@ This is the locked visual language for `/editor` and `/editor/[roomId]`. Later c
 Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
 
 - Left: sidebar toggle, then project name (or `Omniarch` on home) with a `Workspace` subtitle in `text-copy-muted`.
-- Right (workspace only): outline pill **Share**, solid cyan pill **AI** (`Sparkles` + label), then Clerk `UserButton`.
+- Right (workspace only): outline pill **Templates**, outline pill **Share**, solid cyan pill **AI** (`Sparkles` + label), then Clerk `UserButton`.
 - Home hides Share and AI.
 
 ### Project sidebar
@@ -134,7 +134,7 @@ Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
 ### Home vs workspace
 
 - `/editor` (home): both sidebars **closed**. Create-project copy and CTA are centered in the canvas panel.
-- `/editor/[roomId]`: the project sidebar is **open** by default. The AI Copilot panel stays **closed** until the navbar AI button is clicked.
+- `/editor/[roomId]`: the project sidebar is **closed** by default (URL load or selecting a project from the list). Open it from the navbar toggle. The AI Copilot panel stays **closed** until the navbar AI button is clicked. The canvas fits the loaded diagram on first presentation.
 
 ### AI Copilot panel
 

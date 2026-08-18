@@ -19,53 +19,60 @@ export async function parseJsonBody(
   }
 }
 
-export function readOptionalName(body: unknown): string | undefined | Response {
+export function ensureObject(body: unknown): Record<string, unknown> | Response {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
+  return body as Record<string, unknown>;
+}
 
-  if (!("name" in body) || body.name === undefined) {
+export function readOptionalName(body: unknown): string | undefined | Response {
+  const maybeObj = ensureObject(body);
+  if (maybeObj instanceof Response) return maybeObj;
+  const obj = maybeObj;
+
+  if (!("name" in obj) || obj.name === undefined) {
     return undefined;
   }
 
   if (
-    typeof body.name !== "string" ||
-    body.name.trim().length > MAX_PROJECT_NAME_LENGTH
+    typeof obj.name !== "string" ||
+    obj.name.trim().length > MAX_PROJECT_NAME_LENGTH
   ) {
     return Response.json({ error: "Invalid project name" }, { status: 400 });
   }
 
-  return body.name;
+  return obj.name;
 }
 
 export function readOptionalId(body: unknown): string | undefined | Response {
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  const maybeObj = ensureObject(body);
+  if (maybeObj instanceof Response) return maybeObj;
+  const obj = maybeObj;
 
-  if (!("id" in body) || body.id === undefined) {
+  if (!("id" in obj) || obj.id === undefined) {
     return undefined;
   }
 
-  if (typeof body.id !== "string" || body.id.trim() === "") {
+  if (typeof obj.id !== "string" || obj.id.trim() === "") {
     return Response.json({ error: "Invalid project id" }, { status: 400 });
   }
 
-  return body.id;
+  return obj.id;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function readRequiredRoom(body: unknown): string | Response {
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  const maybeObj = ensureObject(body);
+  if (maybeObj instanceof Response) return maybeObj;
+  const obj = maybeObj;
 
-  if (!("room" in body) || typeof body.room !== "string") {
+  if (!("room" in obj) || typeof obj.room !== "string") {
     return Response.json({ error: "Room ID is required" }, { status: 400 });
   }
 
-  const room = body.room.trim();
+  const room = obj.room.trim();
 
   if (room === "") {
     return Response.json({ error: "Room ID is required" }, { status: 400 });
@@ -75,15 +82,15 @@ export function readRequiredRoom(body: unknown): string | Response {
 }
 
 export function readRequiredEmail(body: unknown): string | Response {
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
-    return Response.json({ error: "Invalid request body" }, { status: 400 });
-  }
+  const maybeObj = ensureObject(body);
+  if (maybeObj instanceof Response) return maybeObj;
+  const obj = maybeObj;
 
-  if (!("email" in body) || typeof body.email !== "string") {
+  if (!("email" in obj) || typeof obj.email !== "string") {
     return Response.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const email = body.email.trim().toLowerCase();
+  const email = obj.email.trim().toLowerCase();
 
   if (email === "" || !EMAIL_PATTERN.test(email)) {
     return Response.json({ error: "Invalid email" }, { status: 400 });

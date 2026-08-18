@@ -1,21 +1,10 @@
 "use client";
 
 import React, { useCallback } from "react";
-import {
-  Square,
-  Diamond,
-  Circle,
-  Pill,
-  Cylinder,
-  Hexagon,
-} from "lucide-react";
+import { Square, Diamond, Circle, Pill, Cylinder, Hexagon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CanvasShape } from "@/types/canvas";
-import {
-  DEFAULT_SHAPE_SIZES,
-  SHAPE_ICONS,
-  SHAPE_NAMES,
-} from "@/types/canvas";
+import { DEFAULT_SHAPE_SIZES, SHAPE_ICONS, SHAPE_NAMES } from "@/types/canvas";
 
 export const SHAPE_DRAG_MIME = "application/omniarch-shape";
 
@@ -48,8 +37,7 @@ export function readShapeDragPayload(
   dataTransfer: DataTransfer,
 ): ShapeDragPayload | null {
   const raw =
-    dataTransfer.getData(SHAPE_DRAG_MIME) ||
-    dataTransfer.getData("text/plain");
+    dataTransfer.getData(SHAPE_DRAG_MIME) || dataTransfer.getData("text/plain");
   if (!raw) {
     return null;
   }
@@ -117,13 +105,14 @@ export function ShapePanel({ onDragStart }: ShapePanelProps) {
 
   return (
     <div
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 rounded-full bg-elevated/80 backdrop-blur-sm p-1 border border-surface-border shadow-xl"
+      className="flex items-center gap-1 rounded-full border border-surface-border bg-elevated/80 p-1 shadow-xl backdrop-blur-sm"
       role="toolbar"
       aria-label="Shape tools"
     >
       {shapes.map((shape) => {
         const iconName = SHAPE_ICONS[shape];
-        const Icon = shapeIconComponents[iconName as keyof typeof shapeIconComponents];
+        const Icon =
+          shapeIconComponents[iconName as keyof typeof shapeIconComponents];
 
         return (
           <button

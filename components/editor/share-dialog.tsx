@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, UserRound, X } from "lucide-react";
+import { Link2, Mail, Trash2, UserRound } from "lucide-react";
 
 import { DialogPattern } from "@/components/editor/dialog-pattern";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   useShareDialog,
   type ShareCollaborator,
 } from "@/hooks/use-share-dialog";
+import { cn } from "@/lib/utils";
 
 interface ShareDialogProps {
   open: boolean;
@@ -18,22 +19,89 @@ interface ShareDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function CollaboratorAvatar({ collaborator }: { collaborator: ShareCollaborator }) {
+function CollaboratorAvatar({
+  collaborator,
+}: {
+  collaborator: ShareCollaborator;
+}) {
   if (collaborator.imageUrl) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={collaborator.imageUrl}
         alt=""
-        className="h-8 w-8 shrink-0 rounded-xl object-cover"
+        className="h-9 w-9 shrink-0 rounded-full object-cover"
       />
     );
   }
 
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-subtle">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-subtle">
       <UserRound className="h-4 w-4 text-copy-muted" />
     </div>
+  );
+}
+
+function RoleBadge({ role }: { role: "owner" | "collaborator" }) {
+  const isOwner = role === "owner";
+
+  return (
+    <span
+      className={cn(
+        "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide",
+        isOwner
+          ? "border-brand/50 text-brand"
+          : "border-surface-border text-copy-muted",
+      )}
+    >
+      {isOwner ? "OWNER" : "COLLABORATOR"}
+    </span>
+  );
+}
+
+function AccessRow({
+  person,
+  role,
+  canRemove,
+  removing,
+  onRemove,
+}: {
+  person: ShareCollaborator;
+  role: "owner" | "collaborator";
+  canRemove: boolean;
+  removing: boolean;
+  onRemove?: () => void;
+}) {
+  const name = person.displayName ?? person.email;
+
+  return (
+    <li className="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface px-3 py-2.5">
+      <CollaboratorAvatar collaborator={person} />
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <p className="truncate text-sm font-medium text-copy-primary">
+            {name}
+          </p>
+          <RoleBadge role={role} />
+        </div>
+        {person.email ? (
+          <p className="truncate text-xs text-copy-muted">{person.email}</p>
+        ) : null}
+      </div>
+      {canRemove && onRemove ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Remove ${person.email}`}
+          disabled={removing}
+          className="shrink-0 text-error hover:bg-error/10 hover:text-error"
+          onClick={onRemove}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ) : null}
+    </li>
   );
 }
 
@@ -45,6 +113,7 @@ export function ShareDialog({
 }: ShareDialogProps) {
   const {
     collaborators,
+    owner,
     canManage: resolvedCanManage,
     email,
     setEmail,
@@ -59,6 +128,8 @@ export function ShareDialog({
     reset,
   } = useShareDialog({ open, projectId, canManage });
 
+  const peopleCount = (owner ? 1 : 0) + collaborators.length;
+
   return (
     <DialogPattern
       open={open}
@@ -68,47 +139,66 @@ export function ShareDialog({
         }
         onOpenChange(nextOpen);
       }}
-      title="Share"
+      title="Share project"
       description={
         resolvedCanManage
-          ? "Invite people by email, or copy the project link."
+          ? "Invite collaborators, copy the workspace link, and manage access."
           : "People with access to this project."
       }
-      className="max-w-lg"
+      className="max-w-xl gap-5 p-6 sm:max-w-xl"
+      titleClassName="text-xl font-semibold"
+      descriptionClassName="text-[15px] leading-relaxed"
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {resolvedCanManage ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              void copyProjectLink();
-            }}
-          >
-            <Copy data-icon="inline-start" className="h-5 w-5" />
-            {copied ? "Copied!" : "Copy link"}
-          </Button>
+          <section className="flex items-center justify-between gap-4 rounded-2xl border border-surface-border bg-surface px-4 py-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-medium text-copy-primary">
+                Workspace link
+              </h3>
+              <p className="mt-0.5 text-sm leading-snug text-copy-muted">
+                Share a direct link with teammates after you grant them access.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 shrink-0 rounded-full border-surface-border bg-base px-3 text-copy-primary hover:bg-elevated"
+              onClick={() => {
+                void copyProjectLink();
+              }}
+            >
+              <Link2 data-icon="inline-start" className="h-4 w-4" />
+              {copied ? "Copied!" : "Copy link"}
+            </Button>
+          </section>
         ) : null}
 
         {resolvedCanManage ? (
           <form
-            className="flex gap-2"
+            className="flex items-center gap-2 rounded-2xl border border-surface-border bg-surface p-3"
             onSubmit={(event) => {
               event.preventDefault();
               void invite();
             }}
           >
-            <Input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email address"
-              autoComplete="off"
-              disabled={isInviting}
-              className="text-copy-primary placeholder:text-copy-muted"
-            />
-            <Button type="submit" disabled={isInviting || email.trim() === ""}>
+            <div className="relative min-w-0 flex-1">
+              <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-copy-muted" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="teammate@company.com"
+                autoComplete="off"
+                disabled={isInviting}
+                className="h-10 rounded-full bg-base pl-9 text-copy-primary placeholder:text-copy-muted"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={isInviting || email.trim() === ""}
+              className="h-10 shrink-0 rounded-full px-5"
+            >
               Invite
             </Button>
           </form>
@@ -120,51 +210,46 @@ export function ShareDialog({
           </p>
         ) : null}
 
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-copy-secondary">Collaborators</p>
+        <section className="rounded-2xl border border-surface-border bg-surface p-3">
+          <div className="mb-3 flex items-center justify-between gap-2 px-1">
+            <h3 className="text-sm font-medium text-copy-primary">
+              People with access
+            </h3>
+            <p className="text-xs text-copy-muted">{peopleCount} total</p>
+          </div>
           {isLoading ? (
-            <p className="text-sm text-copy-muted">Loading…</p>
-          ) : collaborators.length === 0 ? (
-            <p className="text-sm text-copy-muted">No collaborators yet.</p>
+            <p className="px-1 text-sm text-copy-muted">Loading…</p>
+          ) : peopleCount === 0 ? (
+            <p className="px-1 text-sm text-copy-muted">
+              No one has access yet.
+            </p>
           ) : (
-            <ScrollArea className="max-h-56">
-              <ul className="flex flex-col gap-1">
+            <ScrollArea className="max-h-64">
+              <ul className="flex flex-col gap-2">
+                {owner ? (
+                  <AccessRow
+                    person={owner}
+                    role="owner"
+                    canRemove={false}
+                    removing={false}
+                  />
+                ) : null}
                 {collaborators.map((collaborator) => (
-                  <li
+                  <AccessRow
                     key={collaborator.id}
-                    className="flex items-center gap-2 rounded-xl px-1 py-1"
-                  >
-                    <CollaboratorAvatar collaborator={collaborator} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-copy-primary">
-                        {collaborator.displayName ?? collaborator.email}
-                      </p>
-                      {collaborator.displayName ? (
-                        <p className="truncate text-xs text-copy-muted">
-                          {collaborator.email}
-                        </p>
-                      ) : null}
-                    </div>
-                    {resolvedCanManage ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label={`Remove ${collaborator.email}`}
-                        disabled={removingId === collaborator.id}
-                        onClick={() => {
-                          void remove(collaborator.id);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    ) : null}
-                  </li>
+                    person={collaborator}
+                    role="collaborator"
+                    canRemove={resolvedCanManage}
+                    removing={removingId === collaborator.id}
+                    onRemove={() => {
+                      void remove(collaborator.id);
+                    }}
+                  />
                 ))}
               </ul>
             </ScrollArea>
           )}
-        </div>
+        </section>
       </div>
     </DialogPattern>
   );
