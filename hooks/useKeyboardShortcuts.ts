@@ -8,7 +8,7 @@ import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 const ZOOM_DURATION = 200;
 
 function isEditableTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
+  if (!(target instanceof Element)) {
     return false;
   }
 
@@ -17,6 +17,10 @@ function isEditableTarget(target: EventTarget | null) {
       "input, textarea, select, [contenteditable]:not([contenteditable='false'])",
     ),
   );
+}
+
+function isDialogTarget(target: EventTarget | null) {
+  return target instanceof Element && target.closest('[role="dialog"]') !== null;
 }
 
 export function useKeyboardShortcuts({
@@ -30,7 +34,7 @@ export function useKeyboardShortcuts({
 }) {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (isEditableTarget(event.target)) {
+      if (isEditableTarget(event.target) || isDialogTarget(event.target)) {
         return;
       }
 
@@ -52,13 +56,13 @@ export function useKeyboardShortcuts({
         return;
       }
 
-      if (event.key === "+" || event.key === "=") {
+      if (!isMod && (event.key === "+" || event.key === "=")) {
         event.preventDefault();
         reactFlow.zoomIn({ duration: ZOOM_DURATION });
         return;
       }
 
-      if (event.key === "-") {
+      if (!isMod && event.key === "-") {
         event.preventDefault();
         reactFlow.zoomOut({ duration: ZOOM_DURATION });
       }
