@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { EditorWorkspacePane } from "@/components/editor/editor-workspace-pane";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectDialogsProvider } from "@/components/editor/project-dialogs-provider";
 import { ShareDialog } from "@/components/editor/share-dialog";
-import { StarterTemplateProvider, useStarterTemplateImport } from "@/components/editor/starter-template-context";
+import {
+  StarterTemplateProvider,
+  useStarterTemplateImport,
+} from "@/components/editor/starter-template-context";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import type { EditorProjectListItem } from "@/lib/projects";
 
@@ -36,6 +45,8 @@ export function EditorShell({
 
   useEffect(() => {
     if (currentRoomId) {
+      // This reset intentionally runs when entering a project room.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSidebarOpen(false);
     }
   }, [currentRoomId]);

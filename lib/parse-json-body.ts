@@ -19,11 +19,13 @@ export async function parseJsonBody(
   }
 }
 
-export function ensureObject(body: unknown): Record<string, any> | Response {
+export function ensureObject(
+  body: unknown,
+): Record<string, unknown> | Response {
   if (body === null || typeof body !== "object" || Array.isArray(body)) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
-  return body as Record<string, any>;
+  return body as Record<string, unknown>;
 }
 
 export function readOptionalName(body: unknown): string | undefined | Response {

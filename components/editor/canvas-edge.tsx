@@ -9,10 +9,7 @@ import {
 } from "@xyflow/react";
 
 import type { CanvasEdge } from "@/types/canvas";
-import {
-  DEFAULT_EDGE_COLOR,
-  DEFAULT_EDGE_STROKE_WIDTH,
-} from "@/types/canvas";
+import { DEFAULT_EDGE_COLOR, DEFAULT_EDGE_STROKE_WIDTH } from "@/types/canvas";
 
 export const EdgeActionsContext = createContext<{
   onLabelChange: (edgeId: string, label: string) => void;
@@ -54,12 +51,6 @@ export function CanvasEdgeComponent({
   const isActive = Boolean(selected) || isHovered;
 
   useEffect(() => {
-    if (!isEditing) {
-      setEditLabel(savedLabel);
-    }
-  }, [savedLabel, isEditing]);
-
-  useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       inputRef.current.select();
@@ -83,8 +74,9 @@ export function CanvasEdgeComponent({
 
   const showHint = isActive && !isEditing && savedLabel.length === 0;
   const showBadge = !isEditing && savedLabel.length > 0;
+  const displayedEditLabel = isEditing ? editLabel : savedLabel;
   const measureText = isEditing
-    ? editLabel || "Label"
+    ? displayedEditLabel || "Label"
     : savedLabel || (showHint ? "Label" : "");
 
   return (
