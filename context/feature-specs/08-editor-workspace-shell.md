@@ -1,6 +1,7 @@
 # Editor Workspace Shell
 
-Build the `/editor/[roomId]` workspace shell with server-side access checks. No canvas logic yet.
+Build the `/editor/[roomId]` workspace shell with server-side access checks. No
+canvas logic yet.
 
 ## Access
 
@@ -41,7 +42,8 @@ The canvas area should fill the remaining space.
 
 ## Scope
 
-Do not add real canvas logic, Liveblocks, or AI chat yet. The workspace shell can render the share dialog for an active room.
+Do not add real canvas logic, Liveblocks, or AI chat yet. The workspace shell
+can render the share dialog for an active room.
 
 ## Check When Done
 
