@@ -36,6 +36,7 @@ async function readApiError(response: Response): Promise<string> {
 interface ShareCollaboratorsPayload {
   collaborators: ShareCollaborator[];
   canManage: boolean;
+  owner: ShareCollaborator | null;
 }
 
 function readCollaborators(value: unknown): ShareCollaboratorsPayload | null {
@@ -64,6 +65,7 @@ function readCollaborators(value: unknown): ShareCollaboratorsPayload | null {
   return {
     collaborators,
     canManage: value.canManage,
+    owner: "owner" in value ? readCollaborator(value.owner) : null,
   };
 }
 
@@ -118,6 +120,7 @@ interface RemoveLock {
 interface ShareSessionState {
   scopedProjectId: string | undefined;
   collaborators: ShareCollaborator[];
+  owner: ShareCollaborator | null;
   loadedCanManage: boolean | null;
   email: string;
   error: string | null;
@@ -133,6 +136,7 @@ type ShareSessionAction =
       type: "fetch-success";
       collaborators: ShareCollaborator[];
       canManage: boolean;
+      owner: ShareCollaborator | null;
     }
   | { type: "fetch-error"; error: string }
   | { type: "fetch-end" }
@@ -156,6 +160,7 @@ function shareSessionReducer(
         ...state,
         scopedProjectId: action.projectId,
         collaborators: [],
+        owner: null,
         loadedCanManage: null,
         email: "",
         error: null,
@@ -168,6 +173,7 @@ function shareSessionReducer(
         ...state,
         isLoading: true,
         collaborators: [],
+        owner: null,
         loadedCanManage: null,
         error: null,
       };
@@ -176,6 +182,7 @@ function shareSessionReducer(
         ...state,
         isLoading: false,
         collaborators: action.collaborators,
+        owner: action.owner,
         loadedCanManage: action.canManage,
       };
     case "fetch-error":
@@ -273,6 +280,7 @@ export function useShareDialog({
   const [state, dispatch] = useReducer(shareSessionReducer, {
     scopedProjectId: projectId,
     collaborators: [],
+    owner: null,
     loadedCanManage: null,
     email: "",
     error: null,
@@ -336,6 +344,7 @@ export function useShareDialog({
             type: "fetch-success",
             collaborators: nextPayload.collaborators,
             canManage: nextPayload.canManage,
+            owner: nextPayload.owner,
           });
         }
       } catch {
@@ -492,6 +501,7 @@ export function useShareDialog({
 
   return {
     collaborators: state.collaborators,
+    owner: state.owner,
     canManage: resolvedCanManage,
     email: state.email,
     setEmail,

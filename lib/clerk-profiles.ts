@@ -69,3 +69,20 @@ export async function getClerkProfilesByEmails(
 
   return profiles;
 }
+
+export async function getClerkProfileByUserId(userId: string): Promise<
+  (ClerkUserProfile & { email: string | null }) | null
+> {
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const email =
+    user.primaryEmailAddress?.emailAddress?.trim().toLowerCase() ??
+    user.emailAddresses[0]?.emailAddress?.trim().toLowerCase() ??
+    null;
+
+  return {
+    displayName: displayNameFor(user),
+    imageUrl: user.imageUrl || null,
+    email,
+  };
+}
