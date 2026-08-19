@@ -17,7 +17,7 @@ const shapeSchema = z
 
 export function createDesignCanvasTools(roomId: string) {
   const applied: DesignAction[] = [];
-  let queue: Promise<void> = Promise.resolve();
+  let queue: Promise<boolean> = Promise.resolve(true);
 
   async function runAction(action: DesignAction) {
     const [sanitized] = sanitizeDesignActions([action]);
@@ -26,8 +26,10 @@ export function createDesignCanvasTools(roomId: string) {
     }
 
     queue = queue.then(async () => {
+      const didApply = await applyDesignActions(roomId, [sanitized]);
+      if (!didApply) return false;
+
       applied.push(sanitized);
-      await applyDesignActions(roomId, [sanitized]);
       if (sanitized.type === "add_node" || sanitized.type === "move_node") {
         await updateAiPresence(
           roomId,
@@ -35,8 +37,13 @@ export function createDesignCanvasTools(roomId: string) {
           180,
         );
       }
+      return true;
     });
-    await queue;
+    const didApply = await queue;
+
+    if (!didApply) {
+      return { ok: false as const, reason: "ID already exists" };
+    }
 
     return { ok: true as const, id: sanitized.id };
   }

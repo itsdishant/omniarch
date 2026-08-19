@@ -323,7 +323,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
   switch (action.type) {
     case "add_node": {
       const node = createCanvasNode(action);
-      if (nodes.get(node.id)) return null;
+      if (nodes.get(node.id)) return false;
       nodes.set(
         node.id,
         LiveObject.from(
@@ -403,7 +403,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
         action.target,
         action.label ?? "",
       );
-      if (edges.get(edge.id)) return null;
+      if (edges.get(edge.id)) return false;
       edges.set(
         edge.id,
         LiveObject.from(
@@ -505,12 +505,13 @@ export async function applyDesignActions(
 ) {
   const liveblocks = getLiveblocksClient();
   const sanitized = sanitizeDesignActions(actions);
+  let applied = true;
 
   await liveblocks.mutateStorage(roomId, ({ root }) => {
     const flow = getFlowMaps(root);
 
     for (const action of sanitized) {
-      applyAction(flow, action);
+      if (applyAction(flow, action) === false) applied = false;
     }
   });
 
@@ -524,9 +525,11 @@ export async function applyDesignActions(
     null,
   );
 
-  if (lastPosition && onCursor) {
+  if (applied && lastPosition && onCursor) {
     await onCursor(lastPosition);
   }
+
+  return applied;
 }
 
 export const ALLOWED_NODE_COLORS = NODE_COLORS.map((pair) => pair.fill);
