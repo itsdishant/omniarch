@@ -176,11 +176,6 @@ ${JSON.stringify(chatHistory, null, 2)}`,
         throw new AbortTaskRunError("Failed to save specification");
       }
 
-      // Enqueue cleanup task BEFORE DB upsert so cleanup is durable even if upsert fails
-      await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
-        blobUrls: [blobUrl],
-      });
-
       try {
         await prisma.projectSpec.upsert({
           where: { id: specId },
@@ -188,7 +183,10 @@ ${JSON.stringify(chatHistory, null, 2)}`,
           update: { filePath: blobUrl },
         });
       } catch {
-        // Cleanup already enqueued; abort to mark run as failed
+        // Enqueue durable cleanup task ONLY on DB failure
+        await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
+          blobUrls: [blobUrl],
+        });
         throw new AbortTaskRunError("Failed to persist specification metadata");
       }
 
