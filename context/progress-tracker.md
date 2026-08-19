@@ -5,7 +5,7 @@ change.
 
 ## Current Phase
 
-- Complete (`26-design-agent-frontend` — sidebar submits design runs, `useRealtimeRun`, shared chat/status)
+- Complete (`29-spec-ui-integration` — project spec list, Markdown preview, and protected downloads in the AI sidebar)
 
 ## Current Goal
 
@@ -42,6 +42,9 @@ change.
 - Home navbar identity — hides the project/workspace text when no project is selected and centers `OmniArch`; selected workspaces retain the project name and `Workspace` subtitle
 - Canvas overlay chrome + DnD — full-bleed dotted canvas (no inset card); overlay sidebars that fully slide off-screen; shape drop writes through Liveblocks `onNodesChange` add; `npm run lint` and `npm run build` pass
 - Liveblocks best-practice pass — suspense imports, `react-error-boundary`, `Cursors`, `getOrCreateRoom`, forbidden auth body, connection listeners, `preventUnsavedChanges`; `npm run lint` and `npm run build` pass
+- `27-spec-generation-flow` — `POST /api/ai/spec` validates `{ roomId, chatHistory, nodes, edges }`, resolves project access from `roomId`, triggers `generate-spec` task, stores `TaskRun`, returns `{ runId, publicToken }`; `POST /api/ai/spec/token` verifies `TaskRun` ownership, issues 1-hour scoped public token; `trigger/generate-spec.ts` uses Gemini 3.6 Flash via `@ai-sdk/google`, reads canvas via `readCanvasGraph`, generates Markdown technical spec with structured sections (Overview, Architecture, Components, Data Flow, Interfaces, Infrastructure, Non-Functional Requirements, Assumptions), publishes status to `ai-status-feed`, returns spec as task output. Zod validation in `types/spec.ts`, canvas schemas in `types/canvas.ts`. `npm run build` and `npm run lint` pass.
+- `28-persistence-download` — added `ProjectSpec` Prisma metadata with migration; generated Markdown is uploaded to private Vercel Blob storage at `specs/{projectId}/{specId}.md` and linked by `filePath`; added authenticated `GET /api/projects/[projectId]/specs/[specId]/download` with project membership and spec ownership checks, returning a Markdown attachment. Canvas persistence remains unchanged.
+- `29-spec-ui-integration` — added the prerequisite authenticated `GET /api/projects/[projectId]/specs` metadata route; the existing AI sidebar Specs tab now lists compact project specs with filenames/timestamps, triggers spec generation from the current room/chat context, tracks the scoped Trigger.dev run, refreshes after completion, opens a keyboard-accessible Markdown preview modal through the protected download endpoint, and provides browser-native download actions from both list and modal. Configured `ScrollArea` viewport block layout (`[&>div]:!block`) so flex truncation properly constrains long spec filenames and keeps the download button accessible within the sidebar. Blob URLs remain server-only. Prisma client generation now runs automatically before dev and build so schema delegates stay synchronized.
 
 ## In Progress
 
@@ -49,7 +52,7 @@ change.
 
 ## Next Up
 
-- Next feature unit: `context/feature-specs/27-spec-generation-flow.md`
+- Next feature unit: (awaiting next spec)
 
 ## Open Questions
 
@@ -58,6 +61,7 @@ change.
 ## Architecture Decisions
 
 - shadcn/ui is the component foundation; generated files in `components/ui/` are not modified after install. Theme mapping lives in `globals.css`.
+- **Spec Generation Architecture**: Spec generation is a durable Trigger.dev background task (`generate-spec`). The client sends `roomId`, `chatHistory`, and empty `nodes`/`edges` arrays to `POST /api/ai/spec`; the task reads the live canvas via `readCanvasGraph(roomId)` from Liveblocks storage. Status updates are published to the `ai-status-feed` Liveblocks feed. The generated Markdown is uploaded to Vercel Blob at `specs/{projectId}/{specId}.md` and metadata stored in `ProjectSpec` Prisma model. Realtime run tracking uses `@trigger.dev/react-hooks` `useRealtimeRun` with a 1-hour scoped public token issued by `POST /api/ai/spec/token` after verifying `TaskRun` ownership. The UI (Specs tab) provides a Generate button, status strip, error display, spec list with preview modal (ReactMarkdown), and download actions.
 - Dark-only theme: tokens from `ui-context.md` are applied on `:root` and `.dark`. The document root always has the `dark` class. shadcn semantic tokens (`background`, `primary`, `card`, …) map onto those product tokens.
 - Editor chrome lives in `components/editor/`. The canvas is full-bleed under the transparent navbar (`bg-base` + 20px dot grid). Project and AI sidebars are `absolute` overlays (`z-30`, `bg-surface/95`, `shadow-lg`) and never dock in the flex row. Closed sidebars translate fully off-screen (`calc(100% + 1.5rem)`), clipped by `overflow-hidden` on the workspace pane. Sidebar open state is owned by `EditorShell`. On mobile, the backdrop scrim closes the project sidebar on outside tap and marks editor content `inert`. Feature dialogs render from one `ProjectDialogs` switch. `useProjectActions` owns dialog state and create/rename/delete API calls. `/editor` loads owned and shared project lists on the server and passes them to the sidebar. Create navigates to `/editor/[roomId]`; the project id is the Liveblocks room id (`slug` + short suffix). Rename refreshes; delete of the active workspace returns to `/editor`. The workspace route is a server component: access is resolved in `lib/project-access.ts` (owner or collaborator via primary email). Missing and unauthorized rooms render `AccessDenied` instead of a 404. The navbar puts the project name and a Workspace label on the left; Templates (outline pill), Share (outline pill), and AI (cyan pill) sit on the right. Owners can invite and remove collaborators and copy the project link; collaborators see a read-only list. The canvas uses a React Flow-style **dot grid** (`.canvas-dots` / `<Background variant="dots" gap={20}>`). The right AI panel is a Copilot placeholder with no chat. Visual chrome is specified in `context/ui-context.md`.
 - Clerk is the auth layer. `proxy.ts` runs `clerkMiddleware()` only. Protected pages and layouts call `auth.protect()`. API route handlers return `401` JSON when `userId` is missing. Sign-in and sign-up stay public. Clerk appearance uses the `dark` theme with CSS variable overrides only (no hardcoded colors). Editor home is `/editor`; a project workspace is `/editor/[roomId]`. `/` only redirects signed-in users to `/editor`. Unauthenticated visits to a workspace redirect to `/sign-in`.

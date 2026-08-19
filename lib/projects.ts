@@ -1,6 +1,8 @@
 import { Prisma } from "@/generated/prisma/client";
 import { ProjectStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { tasks } from "@trigger.dev/sdk";
+import type { cleanupBlobsTask } from "@/trigger/cleanup-blobs";
 
 export function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -125,7 +127,29 @@ export async function renameOwnedProject(projectId: string, name: string) {
 }
 
 export async function deleteOwnedProject(projectId: string) {
-  return prisma.project.delete({
+  // Fetch blob URLs before deleting the project (cascade will remove ProjectSpec records)
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { canvasJsonPath: true, specs: { select: { filePath: true } } },
+  });
+
+  const blobUrls = [
+    ...(project?.canvasJsonPath ? [project.canvasJsonPath] : []),
+    ...(project?.specs?.map((s) => s.filePath) ?? []),
+  ];
+
+  // Delete the project first (cascades to ProjectSpec, ProjectCollaborator, TaskRun)
+  const deletedProject = await prisma.project.delete({
     where: { id: projectId },
   });
+
+  // Trigger durable cleanup task for associated blobs AFTER successful deletion
+  // If enqueue fails, blobs remain but project is gone - can be retried manually or via cron
+  if (blobUrls.length > 0) {
+    await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
+      blobUrls,
+    });
+  }
+
+  return deletedProject;
 }

@@ -1,17 +1,37 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ClientSideSuspense } from "@liveblocks/react/suspense";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type ComponentProps,
+  type KeyboardEvent,
+} from "react";
+import { ClientSideSuspense, useRoom } from "@liveblocks/react/suspense";
 import { Bot, Download, FileText, Loader2, Plus, Send, X } from "lucide-react";
 import { ErrorBoundary } from "react-error-boundary";
+import ReactMarkdown from "react-markdown";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAiChat, type AiChatFeedItem } from "@/hooks/use-ai-chat";
 import { useDesignAgentRun } from "@/hooks/use-design-agent-run";
+import { useSpecGenerationRun } from "@/hooks/use-spec-generation-run";
 import { useAiStatus } from "@/hooks/use-ai-status";
 import { NODE_COLORS } from "@/types/canvas";
+import type { ChatMessage } from "@/types/spec";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarProps {
@@ -117,13 +137,10 @@ function AiSidebarView({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="architect" className="min-h-0">
-            <ArchitectTab
-              isGenerating={isGenerating}
-              statusText={statusText}
-            />
+            <ArchitectTab isGenerating={isGenerating} statusText={statusText} />
           </TabsContent>
           <TabsContent value="specs" className="min-h-0">
-            <SpecsTab />
+            <SpecsTab statusText={statusText} />
           </TabsContent>
         </Tabs>
       </div>
@@ -335,9 +352,7 @@ function ArchitectChatPanel({
                 <div
                   className={cn(
                     "mb-1 flex items-baseline justify-between gap-2 text-[10px]",
-                    message.role === "user"
-                      ? "opacity-80"
-                      : "text-copy-muted",
+                    message.role === "user" ? "opacity-80" : "text-copy-muted",
                   )}
                 >
                   <span className="truncate font-medium">{message.sender}</span>
@@ -411,42 +426,366 @@ function ArchitectChatPanel({
   );
 }
 
-function SpecsTab() {
+function SpecsTab({ statusText }: { statusText?: string }) {
+  const room = useRoom();
+  const { messages: chatMessages } = useAiChat();
+  const [specs, setSpecs] = useState<ProjectSpecSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSpec, setSelectedSpec] = useState<ProjectSpecSummary | null>(
+    null,
+  );
+  const [content, setContent] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const loadSpecs = useCallback(async () => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/projects/${room.id}/specs`, {
+        signal: controller.signal,
+      });
+      const body = (await response.json().catch(() => null)) as {
+        specs?: ProjectSpecSummary[];
+        error?: string;
+      } | null;
+
+      if (!response.ok || !body?.specs) {
+        throw new Error(body?.error || "Couldn't load specs");
+      }
+
+      setSpecs(body.specs);
+    } catch (loadError) {
+      if (
+        loadError instanceof DOMException &&
+        loadError.name === "AbortError"
+      ) {
+        return;
+      }
+      setError(
+        loadError instanceof Error ? loadError.message : "Couldn't load specs",
+      );
+      throw loadError;
+    } finally {
+      if (!controller.signal.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }, [room.id]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadSpecs().catch(() => undefined);
+  }, [loadSpecs]);
+
+  const {
+    error: generationError,
+    isRunActive,
+    startRun,
+  } = useSpecGenerationRun({
+    chatHistory: chatMessages.map<ChatMessage>(
+      ({ role, content, timestamp }) => ({ role, content, timestamp }),
+    ),
+    onComplete: loadSpecs,
+  });
+
+  useEffect(() => {
+    if (!selectedSpec) {
+      return;
+    }
+
+    const spec = selectedSpec;
+    const controller = new AbortController();
+
+    async function loadPreview() {
+      setIsPreviewLoading(true);
+      setPreviewError(null);
+      try {
+        const response = await fetch(
+          `/api/projects/${room.id}/specs/${spec.id}/download`,
+          { signal: controller.signal },
+        );
+        if (!response.ok) {
+          throw new Error("Couldn't load spec preview");
+        }
+        setContent(await response.text());
+      } catch (loadError) {
+        if (
+          loadError instanceof DOMException &&
+          loadError.name === "AbortError"
+        ) {
+          return;
+        }
+        setPreviewError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Couldn't load spec preview",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsPreviewLoading(false);
+        }
+      }
+    }
+
+    void loadPreview();
+    return () => controller.abort();
+  }, [room.id, selectedSpec]);
+
+  function closePreview() {
+    setSelectedSpec(null);
+    setContent(null);
+    setPreviewError(null);
+  }
+
+  async function generateSpec() {
+    try {
+      await startRun();
+    } catch {
+      // The hook exposes the request error in the sidebar.
+    }
+  }
+
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-3 pb-3 pt-3">
-      <Button
-        type="button"
-        className="w-full bg-accent text-white hover:bg-accent/80"
-      >
-        <Plus data-icon="inline-start" className="h-4 w-4" />
-        Generate Spec
-      </Button>
-      <div className="rounded-xl border border-surface-border bg-elevated p-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-brand">
-            <FileText className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-medium text-copy-primary">
-              E-commerce backend spec
-            </h3>
-            <p className="mt-1 text-xs leading-5 text-copy-muted">
-              Services, data flows, and deployment boundaries for a resilient
-              commerce platform.
-            </p>
-          </div>
-        </div>
+    <>
+      <div className="flex h-full min-h-0 flex-col px-3 pb-3 pt-3">
         <Button
           type="button"
-          variant="outline"
-          size="sm"
-          disabled
-          className="mt-4 w-full"
+          className="mb-3 w-full bg-accent text-accent-foreground hover:bg-accent/80"
+          disabled={isRunActive}
+          onClick={() => void generateSpec()}
         >
-          <Download data-icon="inline-start" className="h-3.5 w-3.5" />
-          Download spec
+          {isRunActive ? (
+            <Loader2
+              data-icon="inline-start"
+              className="h-4 w-4 animate-spin"
+            />
+          ) : (
+            <Plus data-icon="inline-start" className="h-4 w-4" />
+          )}
+          {isRunActive ? "Generating spec…" : "Generate spec"}
         </Button>
+        {isRunActive ? (
+          <div
+            className="mb-3 flex items-center gap-2 rounded-xl border border-surface-border bg-elevated px-3 py-2"
+            aria-live="polite"
+          >
+            <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-brand" />
+            <p className="min-w-0 truncate text-[11px] text-copy-secondary">
+              {statusText ?? "Generating technical specification…"}
+            </p>
+          </div>
+        ) : null}
+        {generationError ? (
+          <p className="mb-3 rounded-xl border border-surface-border bg-elevated px-3 py-2 text-xs text-error">
+            {generationError}
+          </p>
+        ) : null}
+        <div className="mb-3 flex items-center gap-2 px-1">
+          <FileText className="h-4 w-4 text-brand" />
+          <p className="text-sm font-medium text-copy-primary">Project specs</p>
+        </div>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-2">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8 text-copy-muted">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            ) : error ? (
+              <p className="rounded-xl border border-surface-border bg-elevated px-3 py-2 text-xs text-error">
+                {error}
+              </p>
+            ) : specs.length === 0 ? (
+              <p className="rounded-xl border border-surface-border bg-elevated px-3 py-4 text-center text-xs leading-5 text-copy-muted">
+                Generated specs will appear here.
+              </p>
+            ) : (
+              specs.map((spec) => (
+                <div
+                  key={spec.id}
+                  className="flex items-center gap-2 rounded-xl border border-surface-border bg-elevated transition-colors hover:bg-subtle"
+                >
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 rounded-lg px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+                    onClick={() => setSelectedSpec(spec)}
+                  >
+                    <p className="truncate text-xs font-medium text-copy-primary">
+                      {spec.filename}
+                    </p>
+                    <time className="mt-0.5 block text-[11px] text-copy-muted">
+                      {formatSpecDate(spec.createdAt)}
+                    </time>
+                  </button>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-copy-muted hover:text-brand"
+                  >
+                    <a
+                      href={`/api/projects/${room.id}/specs/${spec.id}/download`}
+                      aria-label={`Download ${spec.filename}`}
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </div>
-    </div>
+
+      <SpecPreviewDialog
+        content={content}
+        isLoading={isPreviewLoading}
+        error={previewError}
+        projectId={room.id}
+        spec={selectedSpec}
+        onOpenChange={(open) => {
+          if (!open) closePreview();
+        }}
+      />
+    </>
   );
 }
+
+interface ProjectSpecSummary {
+  id: string;
+  createdAt: string;
+  filename: string;
+}
+
+function formatSpecDate(createdAt: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(createdAt));
+}
+
+function SpecPreviewDialog({
+  content,
+  error,
+  isLoading,
+  projectId,
+  spec,
+  onOpenChange,
+}: {
+  content: string | null;
+  error: string | null;
+  isLoading: boolean;
+  projectId: string;
+  spec: ProjectSpecSummary | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const downloadUrl = spec
+    ? `/api/projects/${projectId}/specs/${spec.id}/download`
+    : "";
+
+  return (
+    <Dialog open={Boolean(spec)} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[calc(100svh-2rem)] max-w-3xl gap-0 overflow-hidden rounded-3xl border border-surface-border bg-surface p-0 sm:max-w-3xl">
+        <DialogHeader className="border-b border-surface-border px-5 py-4 pr-12">
+          <DialogTitle className="truncate text-copy-primary">
+            {spec?.filename ?? "Specification"}
+          </DialogTitle>
+          {spec ? (
+            <DialogDescription className="text-copy-muted">
+              Generated {formatSpecDate(spec.createdAt)}
+            </DialogDescription>
+          ) : null}
+        </DialogHeader>
+
+        <ScrollArea className="h-[min(65svh,42rem)] px-5 py-5">
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center text-copy-muted">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : error ? (
+            <p className="rounded-xl border border-surface-border bg-elevated px-3 py-2 text-sm text-error">
+              {error}
+            </p>
+          ) : content ? (
+            <ReactMarkdown components={markdownComponents}>
+              {content}
+            </ReactMarkdown>
+          ) : null}
+        </ScrollArea>
+
+        <DialogFooter className="mx-0 mb-0 rounded-none border-surface-border bg-elevated/60 px-5 py-3 sm:justify-between">
+          <DialogClose asChild>
+            <Button type="button" variant="outline">
+              Close
+            </Button>
+          </DialogClose>
+          {spec ? (
+            <Button asChild type="button">
+              <a href={downloadUrl}>
+                <Download data-icon="inline-start" className="h-4 w-4" />
+                Download
+              </a>
+            </Button>
+          ) : null}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const markdownComponents = {
+  h1: (props: ComponentProps<"h1">) => (
+    <h1
+      className="mb-5 text-2xl font-semibold tracking-tight text-copy-primary"
+      {...props}
+    />
+  ),
+  h2: (props: ComponentProps<"h2">) => (
+    <h2
+      className="mb-3 mt-7 text-lg font-semibold text-copy-primary first:mt-0"
+      {...props}
+    />
+  ),
+  h3: (props: ComponentProps<"h3">) => (
+    <h3
+      className="mb-2 mt-5 text-sm font-semibold text-copy-primary"
+      {...props}
+    />
+  ),
+  p: (props: ComponentProps<"p">) => (
+    <p className="mb-3 text-sm leading-6 text-copy-secondary" {...props} />
+  ),
+  ul: (props: ComponentProps<"ul">) => (
+    <ul
+      className="mb-3 list-disc space-y-1 pl-5 text-sm leading-6 text-copy-secondary"
+      {...props}
+    />
+  ),
+  ol: (props: ComponentProps<"ol">) => (
+    <ol
+      className="mb-3 list-decimal space-y-1 pl-5 text-sm leading-6 text-copy-secondary"
+      {...props}
+    />
+  ),
+  li: (props: ComponentProps<"li">) => <li {...props} />,
+  code: (props: ComponentProps<"code">) => (
+    <code
+      className="rounded bg-subtle px-1 py-0.5 font-mono text-[0.85em] text-brand"
+      {...props}
+    />
+  ),
+  pre: (props: ComponentProps<"pre">) => (
+    <pre
+      className="mb-3 overflow-x-auto rounded-xl border border-surface-border bg-base p-3 text-xs leading-5 text-copy-secondary"
+      {...props}
+    />
+  ),
+  blockquote: (props: ComponentProps<"blockquote">) => (
+    <blockquote
+      className="mb-3 border-l-2 border-brand pl-3 text-sm italic text-copy-secondary"
+      {...props}
+    />
+  ),
+};

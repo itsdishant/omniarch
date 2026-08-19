@@ -57,9 +57,23 @@
 
 ### Spec Generation
 
-- Input: current canvas graph and project context.
-- Execution: durable background task via Trigger.dev.
-- Output: Markdown technical spec saved to the filesystem and linked to the project in the database.
+- Input: current canvas graph (nodes, edges), chat history from the AI Architect tab, and project context (roomId = projectId).
+- Execution: durable background task via Trigger.dev (`generate-spec` task in `trigger/generate-spec.ts`).
+- Model: Gemini 3.6 Flash via `@ai-sdk/google` (`GOOGLE_GENERATIVE_AI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY`). Uses `generateText` with reasoning disabled and minimal thinking config.
+- Processing flow:
+  1. Task receives payload: `roomId`, `chatHistory`, `nodes`, `edges` (nodes/edges from client may be empty; task calls `readCanvasGraph(roomId)` to get live canvas state).
+  2. Ensures Liveblocks room exists (`ensureLiveblocksRoom`).
+  3. Publishes status updates to `ai-status-feed` Liveblocks feed: "Starting spec generation…", "Reading canvas graph…", "Generating technical specification…", "Saving technical specification…".
+  4. Calls `readCanvasGraph(roomId)` to fetch current nodes and edges from Liveblocks storage.
+  5. Constructs system prompt with structured Markdown specification format requirements (Overview, Architecture, Components, Data Flow, Interfaces, Infrastructure, Non-Functional Requirements, Assumptions & Constraints).
+  6. Sends canvas graph (nodes + edges) and chat history to Gemini as JSON in the prompt.
+  7. On success: uploads generated Markdown to Vercel Blob at `specs/{roomId}/{specId}.md` (private, no random suffix, overwrite allowed).
+  8. Creates/upserts `ProjectSpec` record in Prisma with `specId`, `projectId` (roomId), and `filePath` (Blob URL).
+  9. Publishes final status "Spec generation complete" to `ai-status-feed`.
+  10. Returns task output: `{ roomId, specId, filePath, spec }`.
+- Output: Markdown technical spec saved to Vercel Blob, metadata linked to project in Prisma via `ProjectSpec`.
+- Realtime tracking: Client uses `@trigger.dev/react-hooks` `useRealtimeRun` with a 1-hour scoped public token (issued by `POST /api/ai/spec/token` after verifying `TaskRun` ownership) to subscribe to run status and receive completion/error events.
+- Error handling: Task catches errors, publishes "Spec generation failed" to `ai-status-feed`, logs error, and throws `AbortTaskRunError` to mark the run as failed.
 
 ## Invariants
 

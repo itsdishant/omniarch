@@ -22,9 +22,6 @@ OmniArch is a real-time collaborative system design workspace. Users describe a 
 5. User prompts the AI to generate or extend the system design.
 6. AI generates nodes and edges in the shared canvas.
 7. Collaborators edit and refine the design.
-8. User triggers spec generation.
-9. App persists the generated Markdown spec.
-10. User reviews or downloads the spec.
 
 ## Features
 
