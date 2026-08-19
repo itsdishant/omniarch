@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Bot, Download, FileText, Plus, Send, X } from "lucide-react";
+import { ClientSideSuspense } from "@liveblocks/react/suspense";
+import { Bot, Download, FileText, Loader2, Plus, Send, X } from "lucide-react";
+import { ErrorBoundary } from "react-error-boundary";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useAiChat, type AiChatFeedItem } from "@/hooks/use-ai-chat";
+import { useDesignAgentRun } from "@/hooks/use-design-agent-run";
+import { useAiStatus } from "@/hooks/use-ai-status";
+import { NODE_COLORS } from "@/types/canvas";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarProps {
@@ -13,15 +19,47 @@ interface AiSidebarProps {
   onClose: () => void;
 }
 
+const chatGreen = NODE_COLORS[6];
+
 const starterPrompts = [
   "Design an e-commerce backend",
   "Create a chat app architecture",
   "Build a CI/CD pipeline",
 ];
 
-type ChatMessage = { content: string; role: "assistant" | "user" };
-
 export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
+  return (
+    <ErrorBoundary
+      fallback={<AiSidebarView isOpen={isOpen} onClose={onClose} />}
+    >
+      <ClientSideSuspense
+        fallback={<AiSidebarView isOpen={isOpen} onClose={onClose} />}
+      >
+        <AiSidebarLive isOpen={isOpen} onClose={onClose} />
+      </ClientSideSuspense>
+    </ErrorBoundary>
+  );
+}
+
+function AiSidebarLive({ isOpen, onClose }: AiSidebarProps) {
+  const { isGenerating, statusText } = useAiStatus();
+
+  return (
+    <AiSidebarView
+      isOpen={isOpen}
+      onClose={onClose}
+      isGenerating={isGenerating}
+      statusText={statusText}
+    />
+  );
+}
+
+function AiSidebarView({
+  isOpen,
+  onClose,
+  isGenerating = false,
+  statusText,
+}: AiSidebarProps & { isGenerating?: boolean; statusText?: string }) {
   return (
     <aside
       aria-hidden={!isOpen}
@@ -79,7 +117,10 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="architect" className="min-h-0">
-            <ArchitectTab />
+            <ArchitectTab
+              isGenerating={isGenerating}
+              statusText={statusText}
+            />
           </TabsContent>
           <TabsContent value="specs" className="min-h-0">
             <SpecsTab />
@@ -90,10 +131,94 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   );
 }
 
-function ArchitectTab() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+function ArchitectTab({
+  isGenerating,
+  statusText,
+}: {
+  isGenerating: boolean;
+  statusText?: string;
+}) {
+  return (
+    <ErrorBoundary
+      fallback={
+        <ArchitectChatPanel
+          isGenerating={isGenerating}
+          statusText={statusText}
+        />
+      }
+    >
+      <ClientSideSuspense
+        fallback={
+          <ArchitectChatPanel
+            isGenerating={isGenerating}
+            statusText={statusText}
+          />
+        }
+      >
+        <ArchitectChatLive
+          isGenerating={isGenerating}
+          statusText={statusText}
+        />
+      </ClientSideSuspense>
+    </ErrorBoundary>
+  );
+}
+
+function ArchitectChatLive({
+  isGenerating,
+  statusText,
+}: {
+  isGenerating: boolean;
+  statusText?: string;
+}) {
+  const { messages, sendMessage } = useAiChat();
+  const sendAssistant = (content: string) =>
+    sendMessage(content, { role: "assistant", sender: "OmniArch" });
+  const { isRunActive, startRun } = useDesignAgentRun({
+    sendAssistantMessage: sendAssistant,
+  });
+
+  return (
+    <ArchitectChatPanel
+      isGenerating={isGenerating || isRunActive}
+      isRunActive={isRunActive}
+      statusText={statusText}
+      messages={messages}
+      sendMessage={sendMessage}
+      startRun={startRun}
+    />
+  );
+}
+
+function formatChatTime(timestamp: number) {
+  return new Date(timestamp).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function ArchitectChatPanel({
+  isGenerating,
+  isRunActive = false,
+  statusText,
+  messages = [],
+  sendMessage,
+  startRun,
+}: {
+  isGenerating: boolean;
+  isRunActive?: boolean;
+  statusText?: string;
+  messages?: AiChatFeedItem[];
+  sendMessage?: (
+    content: string,
+    options?: { role?: "user" | "assistant"; sender?: string },
+  ) => Promise<boolean>;
+  startRun?: (prompt: string) => Promise<string>;
+}) {
   const [draft, setDraft] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -102,11 +227,40 @@ function ArchitectTab() {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
   }, [draft]);
 
-  function submit() {
-    const message = draft.trim();
-    if (!message) return;
-    setMessages((current) => [...current, { content: message, role: "user" }]);
-    setDraft("");
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    list.scrollTop = list.scrollHeight;
+  }, [messages]);
+
+  async function postError(message: string) {
+    if (!sendMessage) return;
+    await sendMessage(message, { role: "assistant", sender: "OmniArch" });
+  }
+
+  async function submit() {
+    const content = draft.trim();
+    if (!content || isGenerating || isSending || !sendMessage) return;
+    setIsSending(true);
+    try {
+      const sent = await sendMessage(content);
+      if (!sent) {
+        await postError("Couldn't send message. Try again.");
+        return;
+      }
+      setDraft("");
+      if (startRun) {
+        await startRun(content);
+      }
+    } catch (error) {
+      await postError(
+        error instanceof Error
+          ? error.message
+          : "Couldn't start design generation",
+      );
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -116,13 +270,19 @@ function ArchitectTab() {
       !event.nativeEvent.isComposing
     ) {
       event.preventDefault();
-      submit();
+      void submit();
     }
   }
 
+  const inputDisabled = isGenerating || isSending || !sendMessage;
+  const showStatusStrip = isRunActive || isGenerating;
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 px-3 pb-3 pt-3">
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div
+        ref={listRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+      >
         {messages.length === 0 ? (
           <div className="flex min-h-full flex-col items-center justify-center px-3 py-8 text-center">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-subtle text-brand">
@@ -149,9 +309,9 @@ function ArchitectTab() {
             </div>
           </div>
         ) : (
-          messages.map((message, index) => (
+          messages.map((message) => (
             <div
-              key={`${message.content}-${index}`}
+              key={message.id}
               className={cn(
                 "flex",
                 message.role === "user" ? "justify-end" : "justify-start",
@@ -160,17 +320,53 @@ function ArchitectTab() {
               <div
                 className={cn(
                   "max-w-[88%] rounded-xl px-3 py-2 text-sm",
-                  message.role === "user"
-                    ? "border-2 border-brand/50 bg-accent-dim text-copy-primary"
-                    : "border border-surface-border bg-elevated text-accent-foreground",
+                  message.role === "assistant" &&
+                    "border border-surface-border bg-elevated text-copy-primary",
                 )}
+                style={
+                  message.role === "user"
+                    ? {
+                        backgroundColor: chatGreen.text,
+                        color: chatGreen.fill,
+                      }
+                    : undefined
+                }
               >
+                <div
+                  className={cn(
+                    "mb-1 flex items-baseline justify-between gap-2 text-[10px]",
+                    message.role === "user"
+                      ? "opacity-80"
+                      : "text-copy-muted",
+                  )}
+                >
+                  <span className="truncate font-medium">{message.sender}</span>
+                  <time dateTime={new Date(message.timestamp).toISOString()}>
+                    {formatChatTime(message.timestamp)}
+                  </time>
+                </div>
                 {message.content}
               </div>
             </div>
           ))
         )}
       </div>
+
+      {showStatusStrip ? (
+        <div
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-surface-border bg-base px-3 py-2"
+          aria-live="polite"
+        >
+          <span
+            className="size-1.5 shrink-0 animate-pulse rounded-full"
+            style={{ backgroundColor: chatGreen.text }}
+            aria-hidden="true"
+          />
+          <p className="min-w-0 truncate text-[11px] text-copy-secondary">
+            {statusText ?? "Working…"}
+          </p>
+        </div>
+      ) : null}
 
       <div className="shrink-0 rounded-xl border border-surface-border bg-elevated p-2">
         <Textarea
@@ -179,22 +375,35 @@ function ArchitectTab() {
           rows={1}
           placeholder="Describe your architecture..."
           aria-label="Architecture prompt"
+          disabled={inputDisabled}
           className="min-h-18 max-h-40 resize-none overflow-y-auto border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-copy-muted">
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="min-w-0 text-[10px] text-copy-muted">
             Enter to send · Shift+Enter for a new line
           </span>
           <Button
             type="button"
             size="icon-sm"
-            aria-label="Send prompt"
-            className="bg-accent text-white hover:bg-accent/80"
-            onClick={submit}
+            aria-label={
+              isGenerating
+                ? "Generation in progress"
+                : isSending
+                  ? "Sending message"
+                  : "Send prompt"
+            }
+            disabled={inputDisabled}
+            className="text-copy-primary hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: chatGreen.text, color: chatGreen.fill }}
+            onClick={() => void submit()}
           >
-            <Send className="h-4 w-4" />
+            {isGenerating || isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

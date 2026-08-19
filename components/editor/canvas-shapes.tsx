@@ -88,17 +88,16 @@ function CircleShape({
   label,
   hideLabel,
 }: ShapeVisualProps) {
-  const size = Math.min(width, height);
   return (
     <div
-      className="flex items-center justify-center transition-all"
+      className="flex h-full w-full items-center justify-center overflow-hidden transition-all"
       style={{
         borderRadius: "50%",
         ...shapeStroke(selected),
         backgroundColor: fill,
         color: textColor,
-        width: `${size}px`,
-        height: `${size}px`,
+        width: `${width}px`,
+        height: `${height}px`,
       }}
     >
       {hideLabel ? null : (

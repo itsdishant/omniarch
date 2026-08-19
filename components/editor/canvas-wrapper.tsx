@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import {
   ClientSideSuspense,
-  LiveblocksProvider,
-  RoomProvider,
   useCanRedo,
   useCanUndo,
   useErrorListener,
@@ -36,7 +34,7 @@ import {
   type EdgeTypes,
 } from "@xyflow/react";
 import { ErrorBoundary } from "react-error-boundary";
-import { LiveMap, LiveObject } from "@liveblocks/core";
+import { Loader2 } from "lucide-react";
 import "@xyflow/react/dist/style.css";
 import "@liveblocks/react-ui/styles.css";
 import "@liveblocks/react-flow/styles.css";
@@ -183,8 +181,24 @@ function RoomConnectionStatus() {
 
 function FlowCursor({ connectionId }: CursorsCursorProps) {
   const info = useOther(connectionId, (other) => other.info);
+  const thinking = useOther(
+    connectionId,
+    (other) => other.presence.thinking === true,
+  );
 
-  return <Cursor color={info.color} label={info.name} />;
+  return (
+    <Cursor
+      color={info.color}
+      label={
+        <span className="inline-flex items-center gap-1">
+          {thinking ? (
+            <Loader2 className="size-3 animate-spin" aria-hidden="true" />
+          ) : null}
+          {info.name}
+        </span>
+      }
+    />
+  );
 }
 
 function ParticipantAvatars() {
@@ -756,31 +770,11 @@ function CanvasContent({ projectId }: { projectId: string }) {
 }
 
 export function CanvasWrapper({ roomId }: CanvasWrapperProps) {
-  const initialStorage = {
-    flow: new LiveObject({
-      nodes: new LiveMap<string, never>(),
-      edges: new LiveMap<string, never>(),
-    }),
-  };
-
   return (
-    <LiveblocksProvider
-      authEndpoint="/api/liveblocks-auth"
-      throttle={16}
-      preventUnsavedChanges
-      badgeLocation="top-right"
-    >
-      <RoomProvider
-        id={roomId}
-        initialPresence={{ cursor: null, thinking: false }}
-        initialStorage={initialStorage}
-      >
-        <ErrorBoundary fallback={<CanvasErrorFallback />}>
-          <ClientSideSuspense fallback={<CanvasLoadingFallback />}>
-            <CanvasContent projectId={roomId} />
-          </ClientSideSuspense>
-        </ErrorBoundary>
-      </RoomProvider>
-    </LiveblocksProvider>
+    <ErrorBoundary fallback={<CanvasErrorFallback />}>
+      <ClientSideSuspense fallback={<CanvasLoadingFallback />}>
+        <CanvasContent projectId={roomId} />
+      </ClientSideSuspense>
+    </ErrorBoundary>
   );
 }

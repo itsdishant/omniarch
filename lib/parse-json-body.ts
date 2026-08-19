@@ -83,6 +83,43 @@ export function readRequiredRoom(body: unknown): string | Response {
   return room;
 }
 
+export function readRequiredPrompt(body: unknown): string | Response {
+  return readRequiredTrimmedString(body, "prompt", "Prompt is required");
+}
+
+export function readRequiredRoomId(body: unknown): string | Response {
+  return readRequiredTrimmedString(body, "roomId", "Room ID is required");
+}
+
+export function readRequiredProjectId(body: unknown): string | Response {
+  return readRequiredTrimmedString(body, "projectId", "Project ID is required");
+}
+
+export function readRequiredRunId(body: unknown): string | Response {
+  return readRequiredTrimmedString(body, "runId", "Run ID is required");
+}
+
+function readRequiredTrimmedString(
+  body: unknown,
+  key: string,
+  error: string,
+): string | Response {
+  const maybeObj = ensureObject(body);
+  if (maybeObj instanceof Response) return maybeObj;
+  const obj = maybeObj;
+
+  if (!(key in obj) || typeof obj[key] !== "string") {
+    return Response.json({ error }, { status: 400 });
+  }
+
+  const value = obj[key].trim();
+  if (value === "") {
+    return Response.json({ error }, { status: 400 });
+  }
+
+  return value;
+}
+
 export function readRequiredEmail(body: unknown): string | Response {
   const maybeObj = ensureObject(body);
   if (maybeObj instanceof Response) return maybeObj;

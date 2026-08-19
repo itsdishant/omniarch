@@ -60,6 +60,13 @@
 - Do not store large generated content directly in the database.
 - Task run records are first-class relational data — treat ownership and run IDs as verified before any token issuance.
 
+## AI tasks
+
+- Long-running generation belongs in `trigger/`, not route handlers.
+- Design generation uses Gemini through `@ai-sdk/google` (`GOOGLE_API_KEY`).
+- Canvas mutations from the design agent use `generateText` tools in `lib/design-canvas-tools.ts`, then Liveblocks `mutateStorage` on `flow`. Do not use `Output.object()` or a second LLM provider.
+- Shared AI status uses Liveblocks feed `ai-status-feed`. Ephemeral AI presence uses `setPresence` with user id `omniarch-ai`.
+
 ## File Organization
 
 - `lib/` — shared infrastructure: Prisma client, auth helpers, utilities.
