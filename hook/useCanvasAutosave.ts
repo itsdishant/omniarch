@@ -145,12 +145,17 @@ export function useCanvasAutosave({
         while (pendingSnapshot.current) {
           const nextSnapshot = pendingSnapshot.current;
           pendingSnapshot.current = null;
-          const response = await fetch(`/api/projects/${projectId}/canvas`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(nextSnapshot),
-          });
-          if (!response.ok) throw new Error("Unable to save canvas");
+          try {
+            const response = await fetch(`/api/projects/${projectId}/canvas`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(nextSnapshot),
+            });
+            if (!response.ok) throw new Error("Unable to save canvas");
+          } catch (error) {
+            if (!pendingSnapshot.current) throw error;
+            setSaveStatus("saving");
+          }
         }
         setSaveStatus("saved");
         resetStatusTimeout.current = window.setTimeout(() => {

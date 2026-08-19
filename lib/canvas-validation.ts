@@ -67,6 +67,8 @@ export function isCanvasSnapshot(value: unknown): value is {
   }
 
   const nodeIds = new Set(value.nodes.map((node) => node.id));
+  if (nodeIds.size !== value.nodes.length) return false;
+
   const edgeIds = new Set<string>();
   return value.edges.every((edge) => {
     if (
