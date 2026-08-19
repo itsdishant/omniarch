@@ -10,10 +10,14 @@ import { prisma } from "@/lib/prisma";
 
 async function getAccessibleProject(projectId: string) {
   const identity = await getCurrentClerkIdentity();
-  if (!identity) return { response: Response.json({ error: "Unauthorized" }, { status: 401 }) };
+  if (!identity)
+    return {
+      response: Response.json({ error: "Unauthorized" }, { status: 401 }),
+    };
 
   const project = await findAccessibleProjectForViewer(projectId, identity);
-  if (!project) return { response: Response.json({ error: "Forbidden" }, { status: 403 }) };
+  if (!project)
+    return { response: Response.json({ error: "Forbidden" }, { status: 403 }) };
   return { project };
 }
 
@@ -28,7 +32,10 @@ export async function GET(
   const accessible = await getAccessibleProject(projectId);
   if ("response" in accessible) return accessible.response;
 
-  if (!accessible.project.canvasJsonPath || !accessible.project.canvasJsonPath.startsWith("http")) {
+  if (
+    !accessible.project.canvasJsonPath ||
+    !accessible.project.canvasJsonPath.startsWith("http")
+  ) {
     return Response.json({ canvas: null });
   }
 
@@ -40,7 +47,10 @@ export async function GET(
     if (!blob) return Response.json({ canvas: null });
     return Response.json({ canvas: await new Response(blob.stream).json() });
   } catch {
-    return Response.json({ error: "Unable to load saved canvas" }, { status: 502 });
+    return Response.json(
+      { error: "Unable to load saved canvas" },
+      { status: 502 },
+    );
   }
 }
 
@@ -61,16 +71,23 @@ export async function PUT(
   if (body instanceof Response) return body;
 
   if (!Array.isArray(body.nodes) || !Array.isArray(body.edges)) {
-    return Response.json({ error: "Canvas nodes and edges are required" }, { status: 400 });
+    return Response.json(
+      { error: "Canvas nodes and edges are required" },
+      { status: 400 },
+    );
   }
 
-  const blob = await put(`canvas/${projectId}.json`, JSON.stringify({ nodes: body.nodes, edges: body.edges }), {
-    access: "private",
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-    cacheControlMaxAge: 60,
-  });
+  const blob = await put(
+    `canvas/${projectId}.json`,
+    JSON.stringify({ nodes: body.nodes, edges: body.edges }),
+    {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+      cacheControlMaxAge: 60,
+    },
+  );
 
   await prisma.project.update({
     where: { id: projectId },

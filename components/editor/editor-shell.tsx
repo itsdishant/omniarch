@@ -61,25 +61,25 @@ export function EditorShell({
     <CanvasSaveStatusProvider>
       <ProjectDialogsProvider>
         <StarterTemplateProvider>
-        <EditorShellChrome
-          aiSidebarOpen={aiSidebarOpen}
-          canManageShare={canManageShare}
-          currentRoomId={currentRoomId}
-          ownedProjects={ownedProjects}
-          projectName={projectName}
-          shareOpen={shareOpen}
-          sharedProjects={sharedProjects}
-          sidebarOpen={sidebarOpen}
-          templatesOpen={templatesOpen}
-          toggleRef={toggleRef}
-          onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
-          onAiSidebarClose={() => setAiSidebarOpen(false)}
-          onShareOpenChange={setShareOpen}
-          onSidebarClose={handleSidebarClose}
-          onSidebarToggle={() => setSidebarOpen((open) => !open)}
-          onTemplatesOpenChange={setTemplatesOpen}
-        >
-          {children}
+          <EditorShellChrome
+            aiSidebarOpen={aiSidebarOpen}
+            canManageShare={canManageShare}
+            currentRoomId={currentRoomId}
+            ownedProjects={ownedProjects}
+            projectName={projectName}
+            shareOpen={shareOpen}
+            sharedProjects={sharedProjects}
+            sidebarOpen={sidebarOpen}
+            templatesOpen={templatesOpen}
+            toggleRef={toggleRef}
+            onAiSidebarToggle={() => setAiSidebarOpen((open) => !open)}
+            onAiSidebarClose={() => setAiSidebarOpen(false)}
+            onShareOpenChange={setShareOpen}
+            onSidebarClose={handleSidebarClose}
+            onSidebarToggle={() => setSidebarOpen((open) => !open)}
+            onTemplatesOpenChange={setTemplatesOpen}
+          >
+            {children}
           </EditorShellChrome>
         </StarterTemplateProvider>
       </ProjectDialogsProvider>

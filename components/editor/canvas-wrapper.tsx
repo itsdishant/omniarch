@@ -230,7 +230,11 @@ function ParticipantAvatars() {
               {other.info.avatar ? (
                 // Liveblocks user metadata is supplied by the authenticated session.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={other.info.avatar} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={other.info.avatar}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 initials
               )}
@@ -254,7 +258,11 @@ function ParticipantAvatars() {
         {user?.imageUrl ? (
           // Clerk's current user image is display-only in the canvas presence group.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.imageUrl} alt="" className="h-full w-full object-cover" />
+          <img
+            src={user.imageUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
         ) : (
           currentUserInitials
         )}
@@ -605,7 +613,10 @@ function CanvasFlow({ projectId }: { projectId: string }) {
       }
 
       const { shape, width, height } = payload;
-      const cursorPosition = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+      const cursorPosition = screenToFlowPosition({
+        x: e.clientX,
+        y: e.clientY,
+      });
       const position = {
         x: cursorPosition.x - width / 2,
         y: cursorPosition.y - height / 2,

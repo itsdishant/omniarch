@@ -32,28 +32,49 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
         isOpen ? "translate-x-0" : "translate-x-[calc(100%+1.5rem)]",
       )}
     >
-      <div className={cn("flex h-full min-h-0 flex-col", isOpen ? "pointer-events-auto" : "pointer-events-none")}>
+      <div
+        className={cn(
+          "flex h-full min-h-0 flex-col",
+          isOpen ? "pointer-events-auto" : "pointer-events-none",
+        )}
+      >
         <div className="flex shrink-0 items-start justify-between border-b border-surface-border px-4 py-3">
           <div className="flex items-start gap-2.5">
             <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-accent-dim text-brand">
               <Bot className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-medium text-copy-primary">AI Workspace</h2>
-              <p className="text-xs text-copy-muted">Collaborate with OmniArch</p>
+              <h2 className="text-sm font-medium text-copy-primary">
+                AI Workspace
+              </h2>
+              <p className="text-xs text-copy-muted">
+                Collaborate with OmniArch
+              </p>
             </div>
           </div>
-          <Button type="button" variant="ghost" size="icon-sm" aria-label="Close AI sidebar" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Close AI sidebar"
+            onClick={onClose}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
 
         <Tabs defaultValue="architect" className="min-h-0 flex-1">
           <TabsList className="mx-3 mt-3 grid w-[calc(100%-1.5rem)] grid-cols-2 bg-subtle">
-            <TabsTrigger value="architect" className="text-copy-muted data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+            <TabsTrigger
+              value="architect"
+              className="text-copy-muted data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+            >
               AI Architect
             </TabsTrigger>
-            <TabsTrigger value="specs" className="text-copy-muted data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
+            <TabsTrigger
+              value="specs"
+              className="text-copy-muted data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
+            >
               Specs
             </TabsTrigger>
           </TabsList>
@@ -89,7 +110,11 @@ function ArchitectTab() {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault();
       submit();
     }
@@ -103,9 +128,12 @@ function ArchitectTab() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-subtle text-brand">
               <Bot className="h-5 w-5" />
             </div>
-            <p className="mt-3 text-sm font-medium text-copy-primary">Shape your system with AI</p>
-            <p className="mt-1 max-w-[230px] text-xs leading-5 text-copy-muted">
-              Describe what you want to build and OmniArch will help map the architecture.
+            <p className="mt-3 text-sm font-medium text-copy-primary">
+              Shape your system with AI
+            </p>
+            <p className="mt-1 max-w-57.5 text-xs leading-5 text-copy-muted">
+              Describe what you want to build and OmniArch will help map the
+              architecture.
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-2">
               {starterPrompts.map((prompt) => (
@@ -124,7 +152,10 @@ function ArchitectTab() {
           messages.map((message, index) => (
             <div
               key={`${message.content}-${index}`}
-              className={cn("flex", message.role === "user" ? "justify-end" : "justify-start")}
+              className={cn(
+                "flex",
+                message.role === "user" ? "justify-end" : "justify-start",
+              )}
             >
               <div
                 className={cn(
@@ -148,13 +179,21 @@ function ArchitectTab() {
           rows={1}
           placeholder="Describe your architecture..."
           aria-label="Architecture prompt"
-          className="min-h-[72px] max-h-[160px] resize-none overflow-y-auto border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
+          className="min-h-18 max-h-40 resize-none overflow-y-auto border-0 bg-transparent px-1 py-1 text-sm shadow-none focus-visible:ring-0"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleKeyDown}
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-copy-muted">Enter to send · Shift+Enter for a new line</span>
-          <Button type="button" size="icon-sm" aria-label="Send prompt" className="bg-accent text-white hover:bg-accent/80" onClick={submit}>
+          <span className="text-[10px] text-copy-muted">
+            Enter to send · Shift+Enter for a new line
+          </span>
+          <Button
+            type="button"
+            size="icon-sm"
+            aria-label="Send prompt"
+            className="bg-accent text-white hover:bg-accent/80"
+            onClick={submit}
+          >
             <Send className="h-4 w-4" />
           </Button>
         </div>
@@ -166,7 +205,10 @@ function ArchitectTab() {
 function SpecsTab() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-3 pb-3 pt-3">
-      <Button type="button" className="w-full bg-accent text-white hover:bg-accent/80">
+      <Button
+        type="button"
+        className="w-full bg-accent text-white hover:bg-accent/80"
+      >
         <Plus data-icon="inline-start" className="h-4 w-4" />
         Generate Spec
       </Button>
@@ -176,13 +218,22 @@ function SpecsTab() {
             <FileText className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-medium text-copy-primary">E-commerce backend spec</h3>
+            <h3 className="text-sm font-medium text-copy-primary">
+              E-commerce backend spec
+            </h3>
             <p className="mt-1 text-xs leading-5 text-copy-muted">
-              Services, data flows, and deployment boundaries for a resilient commerce platform.
+              Services, data flows, and deployment boundaries for a resilient
+              commerce platform.
             </p>
           </div>
         </div>
-        <Button type="button" variant="outline" size="sm" disabled className="mt-4 w-full">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled
+          className="mt-4 w-full"
+        >
           <Download data-icon="inline-start" className="h-3.5 w-3.5" />
           Download spec
         </Button>

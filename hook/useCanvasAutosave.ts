@@ -22,11 +22,18 @@ interface CanvasSaveStatusContextValue {
   setSaveStatus: (status: CanvasSaveStatus) => void;
 }
 
-const CanvasSaveStatusContext = createContext<CanvasSaveStatusContextValue | null>(null);
+const CanvasSaveStatusContext =
+  createContext<CanvasSaveStatusContextValue | null>(null);
 
-export function CanvasSaveStatusProvider({ children }: { children: ReactNode }) {
+export function CanvasSaveStatusProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [saveStatus, setSaveStatus] = useState<CanvasSaveStatus>("idle");
-  const [saveHandler, setSaveHandlerState] = useState<() => void>(() => undefined);
+  const [saveHandler, setSaveHandlerState] = useState<() => void>(
+    () => undefined,
+  );
   const setSaveHandler = useCallback((handler: () => void) => {
     setSaveHandlerState(() => handler);
   }, []);
@@ -42,7 +49,9 @@ export function CanvasSaveStatusProvider({ children }: { children: ReactNode }) 
 export function useCanvasSaveStatus() {
   const context = useContext(CanvasSaveStatusContext);
   if (!context) {
-    throw new Error("useCanvasSaveStatus must be used within CanvasSaveStatusProvider");
+    throw new Error(
+      "useCanvasSaveStatus must be used within CanvasSaveStatusProvider",
+    );
   }
   return context;
 }

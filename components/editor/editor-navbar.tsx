@@ -1,7 +1,15 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Save, Share2, Sparkles, X } from "lucide-react";
+import {
+  LayoutTemplate,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Save,
+  Share2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { RefObject } from "react";
 
@@ -57,7 +65,9 @@ export function EditorNavbar({
             <h1 className="truncate text-sm font-medium text-copy-primary">
               {projectName}
             </h1>
-            <p className="text-[11px] leading-none text-copy-muted">Workspace</p>
+            <p className="text-[11px] leading-none text-copy-muted">
+              Workspace
+            </p>
           </div>
         ) : null}
       </div>
@@ -82,9 +92,30 @@ export function EditorNavbar({
               <X data-icon="inline-start" className="h-4 w-4" />
               Close
             </Button>
-            <Button type="button" variant="outline" size="sm" className="rounded-full" aria-label={`Canvas ${saveStatus}`} onClick={saveNow}>
-              <Save className={saveStatus === "saving" ? "text-brand" : saveStatus === "error" ? "text-destructive" : "text-success"} />
-              {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved" : saveStatus === "error" ? "Error" : "Save"}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              aria-label={`Save canvas (${saveStatus})`}
+              onClick={saveNow}
+            >
+              <Save
+                className={
+                  saveStatus === "saving"
+                    ? "text-brand"
+                    : saveStatus === "error"
+                      ? "text-destructive"
+                      : "text-success"
+                }
+              />
+              {saveStatus === "saving"
+                ? "Saving..."
+                : saveStatus === "saved"
+                  ? "Saved"
+                  : saveStatus === "error"
+                    ? "Error"
+                    : "Save"}
             </Button>
             <Button
               type="button"
@@ -110,7 +141,9 @@ export function EditorNavbar({
               type="button"
               size="sm"
               className="rounded-full"
-              aria-label={aiSidebarOpen ? "Close AI sidebar" : "Open AI sidebar"}
+              aria-label={
+                aiSidebarOpen ? "Close AI sidebar" : "Open AI sidebar"
+              }
               aria-expanded={aiSidebarOpen}
               onClick={onAiSidebarToggle}
             >

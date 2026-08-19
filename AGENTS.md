@@ -20,3 +20,13 @@ Read the following files in order before implementing or making any architectura
 Update `context/progress-tracker.md` after each meaningful implementation change.
 
 If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.
+
+## Formatting
+
+After every edit, run Prettier on all changed files before running lint, type checks, or tests:
+
+```sh
+npx prettier --write <changed-files>
+```
+
+Do not rely on editor-only formatting or hand-formatting. Keep the Prettier command scoped to the files changed in the current task.

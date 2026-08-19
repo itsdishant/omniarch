@@ -43,8 +43,8 @@ on the collaborative canvas, with visible AI presence and status.
 
 ## Dependencies
 
-   All packages are already installed.`GEMINI_API_KEY` is already in
-   `.env.local`.
+All packages are already installed.`GEMINI_API_KEY` is already in
+`.env.local`.
 
 ## Scope Limits
 

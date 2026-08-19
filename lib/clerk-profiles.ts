@@ -70,9 +70,9 @@ export async function getClerkProfilesByEmails(
   return profiles;
 }
 
-export async function getClerkProfileByUserId(userId: string): Promise<
-  (ClerkUserProfile & { email: string | null }) | null
-> {
+export async function getClerkProfileByUserId(
+  userId: string,
+): Promise<(ClerkUserProfile & { email: string | null }) | null> {
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
   const email =

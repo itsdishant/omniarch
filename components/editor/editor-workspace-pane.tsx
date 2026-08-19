@@ -42,7 +42,7 @@ export function EditorWorkspacePane({
         />
       ) : null}
       <div
-        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? 'pointer-events-none' : ''}`}
+        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? "pointer-events-none" : ""}`}
         inert={contentObscured}
         aria-hidden={contentObscured}
       >

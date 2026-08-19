@@ -23,7 +23,10 @@ export async function DELETE(
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const collaborator = await removeProjectCollaborator(projectId, collaboratorId);
+  const collaborator = await removeProjectCollaborator(
+    projectId,
+    collaboratorId,
+  );
 
   if (!collaborator) {
     return Response.json({ error: "Not found" }, { status: 404 });

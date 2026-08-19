@@ -97,7 +97,9 @@ interface NodeActionsContextType {
   onColorChange: (nodeId: string, pair: NodeColorPair) => void;
 }
 
-export const NodeActionsContext = createContext<NodeActionsContextType | null>(null);
+export const NodeActionsContext = createContext<NodeActionsContextType | null>(
+  null,
+);
 
 function NodeColorToolbar({
   selected,

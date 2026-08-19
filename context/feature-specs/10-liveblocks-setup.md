@@ -39,7 +39,7 @@ This route must:
 2. parse JSON with `parseJsonBody` and require `room`
 3. verify project access using the existing access helper
 4. ensure the Liveblocks room exists with `getOrCreateRoom` (`defaultAccesses:
-   []`)
+[]`)
 5. return an access-token session (`prepareSession`) with:
    - user name
    - avatar

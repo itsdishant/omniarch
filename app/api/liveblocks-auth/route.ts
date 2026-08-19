@@ -53,7 +53,10 @@ export async function POST(request: Request) {
       console.error("Unexpected error creating Liveblocks room:", error);
     }
 
-    return Response.json({ error: "Unable to open collaboration room" }, { status: 500 });
+    return Response.json(
+      { error: "Unable to open collaboration room" },
+      { status: 500 },
+    );
   }
 
   const user = await currentUser();
