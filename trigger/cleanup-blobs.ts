@@ -19,7 +19,8 @@ export const cleanupBlobsTask = task({
   },
   run: async (payload: CleanupBlobsPayload) => {
     const { blobUrls } = payload;
-    const results: Array<{ url: string; success: boolean; error?: string }> = [];
+    const results: Array<{ url: string; success: boolean; error?: string }> =
+      [];
 
     for (const url of blobUrls) {
       try {
@@ -27,7 +28,8 @@ export const cleanupBlobsTask = task({
         results.push({ url, success: true });
         logger.log("Blob deleted successfully", { url });
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         results.push({ url, success: false, error: message });
         logger.error("Failed to delete blob", { url, error: message });
       }

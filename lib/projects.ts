@@ -138,17 +138,18 @@ export async function deleteOwnedProject(projectId: string) {
     ...(project?.specs?.map((s) => s.filePath) ?? []),
   ];
 
-  // Delete the project (cascades to ProjectSpec, ProjectCollaborator, TaskRun)
-  const deletedProject = await prisma.project.delete({
-    where: { id: projectId },
-  });
-
-  // Trigger durable cleanup task for associated blobs
+  // Trigger durable cleanup task for associated blobs BEFORE deleting project
+  // If enqueue fails, project remains intact and deletion can be retried
   if (blobUrls.length > 0) {
     await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
       blobUrls,
     });
   }
+
+  // Delete the project (cascades to ProjectSpec, ProjectCollaborator, TaskRun)
+  const deletedProject = await prisma.project.delete({
+    where: { id: projectId },
+  });
 
   return deletedProject;
 }

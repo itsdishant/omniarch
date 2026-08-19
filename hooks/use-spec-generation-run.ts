@@ -21,6 +21,7 @@ export function useSpecGenerationRun(options: {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const finishingRef = useRef(false);
+  const startingRef = useRef(false);
 
   const { error: realtimeError } = useRealtimeRun<typeof generateSpecTask>(
     handle?.runId,
@@ -66,8 +67,9 @@ export function useSpecGenerationRun(options: {
   }, [handle, realtimeError]);
 
   async function startRun() {
-    if (handle || isStarting) return;
+    if (handle || startingRef.current) return;
 
+    startingRef.current = true;
     setGenerationError(null);
     setIsStarting(true);
     try {
@@ -98,8 +100,10 @@ export function useSpecGenerationRun(options: {
       finishingRef.current = false;
       setHandle({ runId: body.runId, publicToken: body.publicToken });
       setIsStarting(false);
+      startingRef.current = false;
     } catch (error) {
       setIsStarting(false);
+      startingRef.current = false;
       throw error;
     }
   }

@@ -11,6 +11,54 @@ import { prisma } from "@/lib/prisma";
 import { specGenerationPayloadSchema } from "@/types/spec";
 import type { cleanupBlobsTask } from "@/trigger/cleanup-blobs";
 
+// Limits to prevent excessive prompt sizes and provider context limits
+const MAX_NODES = 200;
+const MAX_EDGES = 300;
+const MAX_LABEL_LENGTH = 200;
+const MAX_PROMPT_CHARS = 100_000;
+
+function truncateGraph(graph: { nodes: unknown[]; edges: unknown[] }) {
+  const nodes = graph.nodes.slice(0, MAX_NODES);
+  const edges = graph.edges.slice(0, MAX_EDGES);
+
+  // Truncate long labels in nodes
+  const truncatedNodes = nodes.map((node): Record<string, unknown> => {
+    const n = { ...(node as Record<string, unknown>) };
+    if (typeof n.data === "object" && n.data !== null) {
+      const data = n.data as Record<string, unknown>;
+      if (
+        typeof data.label === "string" &&
+        data.label.length > MAX_LABEL_LENGTH
+      ) {
+        data.label = data.label.slice(0, MAX_LABEL_LENGTH) + "…";
+      }
+    }
+    return n;
+  });
+
+  // Truncate long labels in edges
+  const truncatedEdges = edges.map((edge): Record<string, unknown> => {
+    const e = { ...(edge as Record<string, unknown>) };
+    if (typeof e.data === "object" && e.data !== null) {
+      const data = e.data as Record<string, unknown>;
+      if (
+        typeof data.label === "string" &&
+        data.label.length > MAX_LABEL_LENGTH
+      ) {
+        data.label = data.label.slice(0, MAX_LABEL_LENGTH) + "…";
+      }
+    }
+    return e;
+  });
+
+  return { nodes: truncatedNodes, edges: truncatedEdges };
+}
+
+function truncatePrompt(prompt: string) {
+  if (prompt.length <= MAX_PROMPT_CHARS) return prompt;
+  return prompt.slice(0, MAX_PROMPT_CHARS) + "\n\n[TRUNCATED]";
+}
+
 function googleClient() {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
@@ -97,11 +145,13 @@ Address scalability, reliability, security, and observability based on the archi
 Document any assumptions made during spec generation.
 
 Keep the tone professional and technical. Be specific to the actual canvas content, not generic.`,
-        prompt: `Canvas Graph:
-${JSON.stringify({ nodes: graph.nodes, edges: graph.edges }, null, 2)}
+        prompt: truncatePrompt(
+          `Canvas Graph:
+${JSON.stringify(truncateGraph({ nodes: graph.nodes, edges: graph.edges }), null, 2)}
 
 Chat History:
 ${JSON.stringify(chatHistory, null, 2)}`,
+        ),
       });
 
       await publishAiStatus(roomId, "Saving technical specification…");
@@ -126,6 +176,11 @@ ${JSON.stringify(chatHistory, null, 2)}`,
         throw new AbortTaskRunError("Failed to save specification");
       }
 
+      // Enqueue cleanup task BEFORE DB upsert so cleanup is durable even if upsert fails
+      await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
+        blobUrls: [blobUrl],
+      });
+
       try {
         await prisma.projectSpec.upsert({
           where: { id: specId },
@@ -133,10 +188,7 @@ ${JSON.stringify(chatHistory, null, 2)}`,
           update: { filePath: blobUrl },
         });
       } catch {
-        // Trigger durable cleanup task for the orphaned blob
-        await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
-          blobUrls: [blobUrl],
-        });
+        // Cleanup already enqueued; abort to mark run as failed
         throw new AbortTaskRunError("Failed to persist specification metadata");
       }
 
