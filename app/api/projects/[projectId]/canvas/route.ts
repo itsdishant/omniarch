@@ -2,6 +2,7 @@ import { get, put } from "@vercel/blob";
 import { auth } from "@clerk/nextjs/server";
 
 import { parseJsonBody, ensureObject } from "@/lib/parse-json-body";
+import { isCanvasSnapshot } from "@/lib/canvas-validation";
 import {
   findAccessibleProjectForViewer,
   getCurrentClerkIdentity,
@@ -45,7 +46,8 @@ export async function GET(
       useCache: false,
     });
     if (!blob) return Response.json({ canvas: null });
-    return Response.json({ canvas: await new Response(blob.stream).json() });
+    const canvas = await new Response(blob.stream).json();
+    return Response.json({ canvas: isCanvasSnapshot(canvas) ? canvas : null });
   } catch {
     return Response.json(
       { error: "Unable to load saved canvas" },
@@ -70,24 +72,21 @@ export async function PUT(
   const body = ensureObject(parsed.value);
   if (body instanceof Response) return body;
 
-  if (!Array.isArray(body.nodes) || !Array.isArray(body.edges)) {
+  const canvas = { nodes: body.nodes, edges: body.edges };
+  if (!isCanvasSnapshot(canvas)) {
     return Response.json(
-      { error: "Canvas nodes and edges are required" },
+      { error: "Canvas nodes and edges are invalid" },
       { status: 400 },
     );
   }
 
-  const blob = await put(
-    `canvas/${projectId}.json`,
-    JSON.stringify({ nodes: body.nodes, edges: body.edges }),
-    {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: "application/json",
-      cacheControlMaxAge: 60,
-    },
-  );
+  const blob = await put(`canvas/${projectId}.json`, JSON.stringify(canvas), {
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: "application/json",
+    cacheControlMaxAge: 60,
+  });
 
   await prisma.project.update({
     where: { id: projectId },

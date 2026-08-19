@@ -136,3 +136,4 @@ change.
 - No lost-connection or room-connection error UI; no `preventUnsavedChanges`.
 - Liveblocks badge sat on the MiniMap corner; it is now `top-right`. Portaled UI uses `.lb-portal { z-index: 50 }` above overlay sidebars.
 - ESLint did not check `useMutation` dependency arrays.
+- Canvas persistence review fixes — serialized autosaves so newer snapshots cannot be overwritten by older overlapping requests; added strict runtime validation for saved nodes, edges, IDs, positions, types, node data, and edge endpoints on canvas reads and writes; `npm run lint` and `npx tsc --noEmit` pass.

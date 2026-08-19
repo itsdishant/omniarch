@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { isCanvasSnapshot } from "@/lib/canvas-validation";
 import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 
 export type CanvasSaveStatus = "idle" | "saving" | "saved" | "error";
@@ -63,15 +64,9 @@ interface UseCanvasAutosaveOptions {
   onLoad: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
 }
 
-interface SavedCanvas {
+interface CanvasSnapshot {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
-}
-
-function isSavedCanvas(value: unknown): value is SavedCanvas {
-  if (!value || typeof value !== "object") return false;
-  const canvas = value as Partial<SavedCanvas>;
-  return Array.isArray(canvas.nodes) && Array.isArray(canvas.edges);
 }
 
 export function useCanvasAutosave({
@@ -87,6 +82,8 @@ export function useCanvasAutosave({
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
   const resetStatusTimeout = useRef<number | null>(null);
+  const pendingSnapshot = useRef<CanvasSnapshot | null>(null);
+  const saveInProgress = useRef(false);
 
   useEffect(() => {
     nodesRef.current = nodes;
@@ -114,7 +111,7 @@ export function useCanvasAutosave({
         if (
           nodesRef.current.length === 0 &&
           edgesRef.current.length === 0 &&
-          isSavedCanvas(canvas) &&
+          isCanvasSnapshot(canvas) &&
           (canvas.nodes.length > 0 || canvas.edges.length > 0)
         ) {
           onLoad(canvas.nodes, canvas.edges);
@@ -133,42 +130,59 @@ export function useCanvasAutosave({
     void loadSavedCanvas();
   }, [loadSavedCanvas]);
 
-  const saveCanvas = useCallback(async () => {
-    if (resetStatusTimeout.current !== null) {
-      window.clearTimeout(resetStatusTimeout.current);
-    }
-    setSaveStatus("saving");
+  const saveCanvas = useCallback(
+    async (snapshot: CanvasSnapshot) => {
+      pendingSnapshot.current = snapshot;
+      if (saveInProgress.current) return;
 
-    try {
-      const response = await fetch(`/api/projects/${projectId}/canvas`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nodes, edges }),
-      });
-      if (!response.ok) throw new Error("Unable to save canvas");
-      setSaveStatus("saved");
-      resetStatusTimeout.current = window.setTimeout(() => {
-        setSaveStatus("idle");
-      }, 1200);
-    } catch {
-      setSaveStatus("error");
-      resetStatusTimeout.current = window.setTimeout(() => {
-        setSaveStatus("idle");
-      }, 1600);
-    }
-  }, [edges, nodes, projectId, setSaveStatus]);
+      saveInProgress.current = true;
+      if (resetStatusTimeout.current !== null) {
+        window.clearTimeout(resetStatusTimeout.current);
+      }
+      setSaveStatus("saving");
+
+      try {
+        while (pendingSnapshot.current) {
+          const nextSnapshot = pendingSnapshot.current;
+          pendingSnapshot.current = null;
+          const response = await fetch(`/api/projects/${projectId}/canvas`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nextSnapshot),
+          });
+          if (!response.ok) throw new Error("Unable to save canvas");
+        }
+        setSaveStatus("saved");
+        resetStatusTimeout.current = window.setTimeout(() => {
+          setSaveStatus("idle");
+        }, 1200);
+      } catch {
+        setSaveStatus("error");
+        resetStatusTimeout.current = window.setTimeout(() => {
+          setSaveStatus("idle");
+        }, 1600);
+      } finally {
+        saveInProgress.current = false;
+      }
+    },
+    [projectId, setSaveStatus],
+  );
+
+  const requestSave = useCallback(() => {
+    void saveCanvas({ nodes, edges });
+  }, [edges, nodes, saveCanvas]);
 
   useEffect(() => {
-    setSaveHandler(() => void saveCanvas());
+    setSaveHandler(requestSave);
     return () => setSaveHandler(() => undefined);
-  }, [saveCanvas, setSaveHandler]);
+  }, [requestSave, setSaveHandler]);
 
   useEffect(() => {
     if (!hasCheckedSavedCanvas.current) return;
 
     setSaveStatus("saving");
-    const timeout = window.setTimeout(() => void saveCanvas(), 800);
+    const timeout = window.setTimeout(requestSave, 800);
 
     return () => window.clearTimeout(timeout);
-  }, [edges, nodes, saveCanvas, setSaveStatus]);
+  }, [edges, nodes, requestSave, setSaveStatus]);
 }
