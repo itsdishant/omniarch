@@ -2,15 +2,16 @@
 
 ## Stack
 
-| Layer            | Technology              | Role                                                           |
-| ---------------- | ----------------------- | -------------------------------------------------------------- |
-| Framework        | Next.js 16 + TypeScript | Full-stack app with server/client boundaries                   |
-| UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
-| Auth             | Clerk                   | User identity; `auth.protect()` on protected pages/layouts     |
-| Database         | Prisma + PostgreSQL     | Relational metadata: projects, collaborators, specs, task runs |
-| Canvas           | Liveblocks + React Flow | Real-time collaborative canvas, presence, and cursors          |
-| Background tasks | Trigger.dev             | Durable AI generation workflows                                |
-| Artifact storage | Vercel Blob             | Canvas snapshots and generated Markdown specs                  |
+| Layer            | Technology                | Role                                                           |
+| ---------------- | ------------------------- | -------------------------------------------------------------- |
+| Framework        | Next.js 16 + TypeScript   | Full-stack app with server/client boundaries                   |
+| UI               | Tailwind + shadcn/ui      | Component composition and styling                              |
+| Auth             | Clerk                     | User identity; `auth.protect()` on protected pages/layouts     |
+| Database         | Prisma + PostgreSQL       | Relational metadata: projects, collaborators, specs, task runs |
+| Canvas           | Liveblocks + React Flow   | Real-time collaborative canvas, presence, and cursors          |
+| Background tasks | Trigger.dev               | Durable AI generation workflows                                |
+| LLM              | Gemini (`@ai-sdk/google`) | Design (and later spec) generation inside Trigger.dev tasks    |
+| Artifact storage | Vercel Blob               | Canvas snapshots and generated Markdown specs                  |
 
 ## System Boundaries
 
@@ -49,9 +50,10 @@
 
 ### Design Generation
 
-- Input: user prompt, project context, and current canvas state.
-- Execution: durable background task via Trigger.dev.
-- Output: structured node and edge updates written into the shared Liveblocks room.
+- Input: user prompt, project context, and current canvas state (`readCanvasGraph`).
+- Execution: Trigger.dev task `design-agent` (`trigger/design-agent.ts`).
+- Model: Gemini 3.6 Flash via `@ai-sdk/google` and `GOOGLE_API_KEY`. `generateText` with canvas tools (`lib/design-canvas-tools.ts`); do not use `Output.object()` or OpenRouter.
+- Output: node and edge updates written into the shared Liveblocks room `flow` storage as tools run. Status messages go to feed `ai-status-feed`. Ephemeral presence user `omniarch-ai` shows `cursor` and `thinking` until the run ends.
 
 ### Spec Generation
 
@@ -65,4 +67,4 @@
 2. Metadata and large generated artifacts are stored in separate layers.
 3. Auth and ownership are enforced at every mutation boundary.
 4. Client components are used only where browser interactivity or real-time state requires them.
-5. The canvas schema must remain consistent between user-created content and imported templates.
+5. The canvas schema must remain consistent between user-created content, imported templates, and AI-generated nodes/edges.

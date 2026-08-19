@@ -34,6 +34,14 @@ declare global {
     };
     GroupInfo: Record<string, never>;
     ActivitiesData: Record<string, never>;
+    FeedMessageData: {
+      text?: string;
+      sender?: string;
+      role?: "user" | "assistant";
+      content?: string;
+      timestamp?: number;
+    };
+    FeedMetadata: Record<string, never>;
   }
 }
 

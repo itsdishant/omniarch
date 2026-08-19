@@ -19,6 +19,9 @@ on the collaborative canvas, with visible AI presence and status.
 
    Then implement:
    - use Gemini (`@ai-sdk/google`) to interpret the user prompt
+     via `generateText` tools (not `Output.object()`):
+     `addNode`, `moveNode`, `resizeNode`, `updateNodeData`,
+     `deleteNode`, `addEdge`, `deleteEdge`
    - update the canvas using the existing collaborative flow utilities
    - support actions like:
      - add node
@@ -37,14 +40,17 @@ on the collaborative canvas, with visible AI presence and status.
      - allowed node shapes
      - color palette
      - layout and spacing rules
+   - reject add-node and add-edge operations whose IDs already exist, and
+     report failed additions or mutations with missing targets to the model
+     without overwriting canvas data
 
    - handle errors gracefully and update status if something fails
    - clear AI presence when the task finishes
 
 ## Dependencies
 
-All packages are already installed.`GEMINI_API_KEY` is already in
-`.env.local`.
+All packages are already installed. `GOOGLE_API_KEY` is already in
+`.env.local` (used by `@ai-sdk/google`). Do not add OpenRouter.
 
 ## Scope Limits
 

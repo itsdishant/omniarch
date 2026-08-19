@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { AiSidebar } from "@/components/editor/ai-sidebar";
+import { LiveblocksRoom } from "@/components/editor/liveblocks-room";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { useMobileViewport } from "@/hooks/use-mobile-viewport";
 import type { EditorProjectListItem } from "@/lib/projects";
@@ -31,6 +32,16 @@ export function EditorWorkspacePane({
   const isMobile = useMobileViewport();
   const contentObscured = isMobile && (sidebarOpen || aiSidebarOpen);
 
+  const canvas = (
+    <div
+      className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? "pointer-events-none" : ""}`}
+      inert={contentObscured}
+      aria-hidden={contentObscured}
+    >
+      {children}
+    </div>
+  );
+
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden bg-base">
       {sidebarOpen && isMobile ? (
@@ -41,13 +52,14 @@ export function EditorWorkspacePane({
           onClick={onSidebarClose}
         />
       ) : null}
-      <div
-        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? "pointer-events-none" : ""}`}
-        inert={contentObscured}
-        aria-hidden={contentObscured}
-      >
-        {children}
-      </div>
+      {currentRoomId ? (
+        <LiveblocksRoom roomId={currentRoomId}>
+          {canvas}
+          <AiSidebar isOpen={aiSidebarOpen} onClose={onAiSidebarClose} />
+        </LiveblocksRoom>
+      ) : (
+        canvas
+      )}
       <ProjectSidebar
         currentRoomId={currentRoomId}
         isOpen={sidebarOpen}
@@ -55,9 +67,6 @@ export function EditorWorkspacePane({
         sharedProjects={sharedProjects}
         onClose={onSidebarClose}
       />
-      {currentRoomId ? (
-        <AiSidebar isOpen={aiSidebarOpen} onClose={onAiSidebarClose} />
-      ) : null}
     </div>
   );
 }
