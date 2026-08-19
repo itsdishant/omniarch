@@ -41,7 +41,8 @@ on the collaborative canvas, with visible AI presence and status.
      - color palette
      - layout and spacing rules
    - reject add-node and add-edge operations whose IDs already exist, and
-     report the failed operation to the model without overwriting canvas data
+     report failed additions or mutations with missing targets to the model
+     without overwriting canvas data
 
    - handle errors gracefully and update status if something fails
    - clear AI presence when the task finishes

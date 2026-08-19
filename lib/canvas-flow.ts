@@ -331,17 +331,17 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
           NODE_SYNC,
         ) as LiveblocksNode<CanvasNode>,
       );
-      return node.position;
+      return true;
     }
     case "move_node": {
       const node = nodes.get(action.id);
-      if (!node) return null;
+      if (!node) return false;
       node.set("position", { x: action.x, y: action.y });
-      return { x: action.x, y: action.y };
+      return true;
     }
     case "resize_node": {
       const node = nodes.get(action.id);
-      if (!node) return null;
+      if (!node) return false;
       let width = action.width;
       let height = action.height;
       const data = node.get("data") as
@@ -358,13 +358,11 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
       }
       node.set("width", width);
       node.set("height", height);
-      return (
-        (node.get("position") as { x: number; y: number } | undefined) ?? null
-      );
+      return true;
     }
     case "update_node_data": {
       const node = nodes.get(action.id);
-      if (!node) return null;
+      if (!node) return false;
       const data = node.get("data") as
         | LiveObject<{
             label: string;
@@ -373,7 +371,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
             shape: CanvasShape;
           }>
         | undefined;
-      if (!data || typeof data.set !== "function") return null;
+      if (!data || typeof data.set !== "function") return false;
       if (action.label !== undefined) data.set("label", action.label);
       if (action.shape) data.set("shape", action.shape);
       if (action.color) {
@@ -381,9 +379,10 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
         data.set("color", pair.fill);
         data.set("textColor", pair.text);
       }
-      return (node.get("position") as { x: number; y: number } | undefined) ?? null;
+      return true;
     }
     case "delete_node": {
+      if (!nodes.get(action.id)) return false;
       for (const [edgeId, edge] of edges.entries()) {
         if (
           edge.get("source") === action.id ||
@@ -393,10 +392,10 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
         }
       }
       nodes.delete(action.id);
-      return null;
+      return true;
     }
     case "add_edge": {
-      if (!nodes.get(action.source) || !nodes.get(action.target)) return null;
+      if (!nodes.get(action.source) || !nodes.get(action.target)) return false;
       const edge = createCanvasEdge(
         action.id,
         action.source,
@@ -411,12 +410,12 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
           EDGE_SYNC,
         ) as LiveblocksEdge<CanvasEdge>,
       );
-      const source = nodes.get(action.source);
-      return (source?.get("position") as { x: number; y: number } | undefined) ?? null;
+      return true;
     }
     case "delete_edge": {
+      if (!edges.get(action.id)) return false;
       edges.delete(action.id);
-      return null;
+      return true;
     }
   }
 }
@@ -511,7 +510,7 @@ export async function applyDesignActions(
     const flow = getFlowMaps(root);
 
     for (const action of sanitized) {
-      if (applyAction(flow, action) === false) applied = false;
+      if (!applyAction(flow, action)) applied = false;
     }
   });
 

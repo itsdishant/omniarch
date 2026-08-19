@@ -42,7 +42,7 @@ export function createDesignCanvasTools(roomId: string) {
     const didApply = await queue;
 
     if (!didApply) {
-      return { ok: false as const, reason: "ID already exists" };
+      return { ok: false as const, reason: "Operation could not be applied" };
     }
 
     return { ok: true as const, id: sanitized.id };
