@@ -155,7 +155,3 @@ context/
 - **Durable cleanup**: Trigger.dev task with exponential backoff (5 attempts, up to 1 hour)
 - **Blob lifecycle**: Cleanup only on failure (generation) or after success (deletion)
 - **Access control**: All API routes verify project ownership/collaboration
-
-## License
-
-MIT
