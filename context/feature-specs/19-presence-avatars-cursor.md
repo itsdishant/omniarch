@@ -19,16 +19,16 @@ without changing the editor home navbar.
    - filter the Liveblocks presence list to exclude any entry
      whose user ID matches the current Clerk user ID
    - render the filtered list as collaborator avatars only
-   - render the current user separately using the existing Clerk
-     UserButton — do not render a second avatar for them from
-     the Liveblocks presence list
-   - keep collaborator avatars and the Clerk UserButton the same
+   - render the current user separately using the active Clerk
+     user's image or initials as a display-only avatar — do not
+     render a second avatar for them from the Liveblocks presence list
+   - keep collaborator avatars and the current-user avatar the same
      size so the group looks visually consistent
    - collaborator avatars are display-only, not interactive
    - show a divider between the collaborator avatars and the
-     Clerk UserButton only when at least one collaborator exists
-   - if no collaborators are present, show only the Clerk
-     UserButton with no divider
+     current-user avatar only when at least one collaborator exists
+   - if no collaborators are present, show only the current-user
+     avatar with no divider
 
 3. Render collaborator avatars.
    - use profile photos when available

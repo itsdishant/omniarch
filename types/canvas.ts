@@ -1,12 +1,7 @@
 import type { Node, Edge } from "@xyflow/react";
 
 export type CanvasShape =
-  | "rectangle"
-  | "diamond"
-  | "circle"
-  | "pill"
-  | "cylinder"
-  | "hexagon";
+  "rectangle" | "diamond" | "circle" | "pill" | "cylinder" | "hexagon";
 
 export interface NodeColorPair {
   fill: string;
@@ -42,7 +37,10 @@ export type CanvasNodeType = CanvasNode;
 export type CanvasEdgeType = CanvasEdge;
 
 // Default sizes for each shape
-export const DEFAULT_SHAPE_SIZES: Record<CanvasShape, { width: number; height: number }> = {
+export const DEFAULT_SHAPE_SIZES: Record<
+  CanvasShape,
+  { width: number; height: number }
+> = {
   rectangle: { width: 200, height: 100 },
   diamond: { width: 180, height: 180 },
   circle: { width: 120, height: 120 },

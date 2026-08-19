@@ -46,6 +46,14 @@ Support:
 
 Do not build actual dialogs yet.
 
+## Current Navbar Behavior
+
+- On `/editor`, the sidebar toggle remains on the left while `OmniArch` is
+  centered; the project name and `Workspace` subtitle are hidden until a
+  project workspace is selected.
+- On `/editor/[roomId]`, the selected project name and `Workspace` subtitle
+  remain on the left.
+
 ## Check when done
 
 - new components compile without TypeScript errors

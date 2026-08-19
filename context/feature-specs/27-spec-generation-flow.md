@@ -19,6 +19,7 @@ task, token route, and run ownership tracking.
    - return the Trigger.dev `runId`
 
    Do not trust a client-supplied `projectId`.
+
 1. Spec token route
 
    Create or update `POST /api/ai/spec/token`.
@@ -31,6 +32,7 @@ task, token route, and run ownership tracking.
    - issue a Trigger.dev public access token scoped to that run
    - set token expiration to 1 hour
    - return the token to the client
+
 1. Spec generation task
 
    Create or update `trigger/generate-spec.ts`.

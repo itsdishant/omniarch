@@ -141,7 +141,11 @@ type ShareSessionAction =
   | { type: "fetch-error"; error: string }
   | { type: "fetch-end" }
   | { type: "invite-start"; generation: number }
-  | { type: "invite-success"; generation: number; collaborator: ShareCollaborator }
+  | {
+      type: "invite-success";
+      generation: number;
+      collaborator: ShareCollaborator;
+    }
   | { type: "invite-error"; generation: number; error: string }
   | { type: "remove-start"; generation: number; collaboratorId: string }
   | { type: "remove-success"; generation: number; collaboratorId: string }
@@ -323,7 +327,10 @@ export function useShareDialog({
 
         if (!response.ok) {
           if (!cancelled) {
-            dispatch({ type: "fetch-error", error: await readApiError(response) });
+            dispatch({
+              type: "fetch-error",
+              error: await readApiError(response),
+            });
           }
           return;
         }

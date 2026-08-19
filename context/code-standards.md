@@ -9,10 +9,10 @@
 
 ## The Core Philosophy
 
-- YAGNI Principle: Embodies "You Aren't Gonna Need It" by aggressively stripping out unrequested abstractions, scaffolding, and boilerplate.
-- Deletion over Addition: Favors deleting or simplifying code over building complex new modules
-- Platform First: Checks native libraries, standard runtimes, and built-in browser/platform capabilities before writing custom components.
-- Boring over Clever: Chooses straightforward, readable implementations instead of complex, clever design patterns.
+- YAGNI Principle: Embody "You Aren't Gonna Need It" by aggressively stripping out unrequested abstractions, scaffolding, and boilerplate.
+- Deletion over Addition: Favor deleting or simplifying code over building complex new modules
+- Platform First: Check native libraries, standard runtimes, and built-in browser/platform capabilities before writing custom components.
+- Boring over Clever: Choose straightforward, readable implementations instead of complex, clever design patterns.
 
 ## TypeScript
 

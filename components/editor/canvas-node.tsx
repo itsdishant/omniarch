@@ -37,7 +37,7 @@ const MIN_SHAPE_SIZES: Record<CanvasShape, { width: number; height: number }> =
   };
 
 const HANDLE_CLASS =
-  "!h-2 !w-2 !min-h-2 !min-w-2 !rounded-full !border !border-base !bg-white opacity-0 transition-opacity duration-150 group-hover:opacity-100";
+  "!h-2 !w-2 !min-h-2 !min-w-2 !rounded-full !border !border-base !bg-white pointer-events-auto";
 
 type HandleSide = "top" | "right" | "bottom" | "left";
 
@@ -97,7 +97,9 @@ interface NodeActionsContextType {
   onColorChange: (nodeId: string, pair: NodeColorPair) => void;
 }
 
-export const NodeActionsContext = createContext<NodeActionsContextType | null>(null);
+export const NodeActionsContext = createContext<NodeActionsContextType | null>(
+  null,
+);
 
 function NodeColorToolbar({
   selected,

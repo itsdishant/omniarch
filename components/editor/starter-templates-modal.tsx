@@ -8,7 +8,12 @@ import {
   type CanvasTemplate,
 } from "@/components/editor/starter-templates";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_SHAPE_SIZES, type CanvasEdge, type CanvasNode, type CanvasShape } from "@/types/canvas";
+import {
+  DEFAULT_SHAPE_SIZES,
+  type CanvasEdge,
+  type CanvasNode,
+  type CanvasShape,
+} from "@/types/canvas";
 
 const PREVIEW_WIDTH = 280;
 const PREVIEW_HEIGHT = 168;
@@ -128,7 +133,13 @@ function PreviewShape({ node }: { node: CanvasNode }) {
     const ry = height * 0.14;
     return (
       <g>
-        <rect x={x} y={y + ry} width={width} height={height - ry * 2} fill={fill} />
+        <rect
+          x={x}
+          y={y + ry}
+          width={width}
+          height={height - ry * 2}
+          fill={fill}
+        />
         <ellipse
           cx={x + width / 2}
           cy={y + height - ry}
@@ -147,7 +158,14 @@ function PreviewShape({ node }: { node: CanvasNode }) {
           stroke={stroke}
           strokeWidth={2}
         />
-        <line x1={x} y1={y + ry} x2={x} y2={y + height - ry} stroke={stroke} strokeWidth={2} />
+        <line
+          x1={x}
+          y1={y + ry}
+          x2={x}
+          y2={y + height - ry}
+          stroke={stroke}
+          strokeWidth={2}
+        />
         <line
           x1={x + width}
           y1={y + ry}

@@ -16,6 +16,7 @@ route so users can retrieve their generated spec files.
 
    Use this model for metadata only. The actual spec content should live in
    Vercel Blob.
+
 1. Save generated spec
 
    After a spec is generated:
@@ -24,6 +25,7 @@ route so users can retrieve their generated spec files.
    - store the Blob URL/path in `ProjectSpec.filePath`
    - link the record to the correct project
    - follow the same metadata + blob pattern used for canvas persistence
+
 1. Download route
 
    Create a route like: `GET /api/projects/[projectId]/specs/[specId]/download`

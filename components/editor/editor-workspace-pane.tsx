@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
+import { AiSidebar } from "@/components/editor/ai-sidebar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { useMobileViewport } from "@/hooks/use-mobile-viewport";
 import type { EditorProjectListItem } from "@/lib/projects";
@@ -12,6 +12,7 @@ interface EditorWorkspacePaneProps {
   currentRoomId?: string;
   sidebarOpen: boolean;
   onSidebarClose: () => void;
+  onAiSidebarClose: () => void;
   ownedProjects: EditorProjectListItem[];
   sharedProjects: EditorProjectListItem[];
   children?: ReactNode;
@@ -22,6 +23,7 @@ export function EditorWorkspacePane({
   currentRoomId,
   sidebarOpen,
   onSidebarClose,
+  onAiSidebarClose,
   ownedProjects,
   sharedProjects,
   children,
@@ -40,7 +42,7 @@ export function EditorWorkspacePane({
         />
       ) : null}
       <div
-        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? 'pointer-events-none' : ''}`}
+        className={`absolute inset-0 flex min-h-0 w-full flex-col bg-base ${contentObscured ? "pointer-events-none" : ""}`}
         inert={contentObscured}
         aria-hidden={contentObscured}
       >
@@ -54,7 +56,7 @@ export function EditorWorkspacePane({
         onClose={onSidebarClose}
       />
       {currentRoomId ? (
-        <AiSidebarPlaceholder isOpen={aiSidebarOpen} />
+        <AiSidebar isOpen={aiSidebarOpen} onClose={onAiSidebarClose} />
       ) : null}
     </div>
   );

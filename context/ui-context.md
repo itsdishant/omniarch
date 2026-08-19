@@ -120,15 +120,15 @@ This is the locked visual language for `/editor` and `/editor/[roomId]`. Later c
 
 Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
 
-- Left: sidebar toggle, then project name (or `Omniarch` on home) with a `Workspace` subtitle in `text-copy-muted`.
-- Right (workspace only): outline pill **Templates**, outline pill **Share**, solid cyan pill **AI** (`Sparkles` + label), then Clerk `UserButton`.
+- Left: sidebar toggle, then the selected project name with a `Workspace` subtitle in `text-copy-muted`. On the editor home, the project text section is hidden and `OmniArch` is centered in the navbar.
+- Right (workspace only): outline pill **Close** (`X` + label), outline pill **Save** (save status), outline pill **Templates**, outline pill **Share**, solid cyan pill **AI** (`Sparkles` + label), then Clerk `UserButton`.
 - Home hides Share and AI.
 
 ### Project sidebar
 
 - Header: `Projects` + close.
 - Segmented **My Projects** / **Shared** tabs. The selected tab follows the current room: a shared room opens **Shared**; an owned room opens **My Projects**. Manual tab changes persist until the room changes.
-- Current room: cyan status dot + `bg-accent-dim` row. Rename and delete sit inside that same highlighted row (no separate chip). Unselected rows still reveal actions on hover.
+- Project rows use consistent interactive tiles: `bg-elevated/45`, a subtle `border-surface-border/70`, rounded corners, and hover/focus feedback. The current room adds the cyan status dot, `bg-accent-dim`, and `border-brand/30`; rename and delete remain inside that highlighted row. Unselected owner rows reveal actions on hover.
 - Footer pinned: full-width pill **New Project** (`rounded-full`, cyan). No compass mark.
 
 ### Home vs workspace
