@@ -323,6 +323,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
   switch (action.type) {
     case "add_node": {
       const node = createCanvasNode(action);
+      if (nodes.get(node.id)) return null;
       nodes.set(
         node.id,
         LiveObject.from(
@@ -402,6 +403,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
         action.target,
         action.label ?? "",
       );
+      if (edges.get(edge.id)) return null;
       edges.set(
         edge.id,
         LiveObject.from(

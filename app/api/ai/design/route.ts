@@ -43,10 +43,13 @@ export async function POST(request: Request) {
   if (!project) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+  if (roomId !== project.id) {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const handle = await tasks.trigger<typeof designAgentTask>("design-agent", {
     prompt,
-    roomId,
+    roomId: project.id,
   });
 
   await createTaskRun({
