@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Node, Edge } from "@xyflow/react";
 
 export type CanvasShape =
@@ -98,3 +99,14 @@ export const SHAPE_NAMES: Record<CanvasShape, string> = {
   cylinder: "Cylinder",
   hexagon: "Hexagon",
 };
+
+export const CanvasNodeDataSchema = z.object({
+  label: z.string(),
+  color: z.string(),
+  textColor: z.string().optional(),
+  shape: z.enum(["rectangle", "diamond", "circle", "pill", "cylinder", "hexagon"]),
+}).passthrough();
+
+export const CanvasEdgeDataSchema = z.object({
+  label: z.string().optional(),
+}).passthrough();
