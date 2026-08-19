@@ -1,7 +1,8 @@
 import { Prisma } from "@/generated/prisma/client";
 import { ProjectStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
-import { del } from "@vercel/blob";
+import { tasks } from "@trigger.dev/sdk";
+import type { cleanupBlobsTask } from "@/trigger/cleanup-blobs";
 
 export function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -142,16 +143,11 @@ export async function deleteOwnedProject(projectId: string) {
     where: { id: projectId },
   });
 
-  // Clean up associated blobs after successful project deletion
-  for (const url of blobUrls) {
-    if (url) {
-      try {
-        await del(url);
-      } catch (error) {
-        // Log but don't fail the deletion if blob cleanup fails
-        console.error(`Failed to delete blob ${url}:`, error);
-      }
-    }
+  // Trigger durable cleanup task for associated blobs
+  if (blobUrls.length > 0) {
+    await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
+      blobUrls,
+    });
   }
 
   return deletedProject;

@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
+import { AbortTaskRunError, logger, task, tasks } from "@trigger.dev/sdk";
 import { generateText } from "ai";
-import { put, del } from "@vercel/blob";
+import { put } from "@vercel/blob";
 import { z } from "zod";
 
 import { readCanvasGraph } from "@/lib/canvas-flow";
@@ -9,6 +9,7 @@ import { publishAiStatus } from "@/lib/ai-status";
 import { ensureLiveblocksRoom } from "@/lib/liveblocks";
 import { prisma } from "@/lib/prisma";
 import { specGenerationPayloadSchema } from "@/types/spec";
+import type { cleanupBlobsTask } from "@/trigger/cleanup-blobs";
 
 function googleClient() {
   const apiKey =
@@ -132,16 +133,10 @@ ${JSON.stringify(chatHistory, null, 2)}`,
           update: { filePath: blobUrl },
         });
       } catch {
-        // Clean up the uploaded blob if database write fails
-        try {
-          await del(blobUrl);
-          logger.log("Cleaned up orphaned blob after DB failure", { blobUrl });
-        } catch (cleanupError) {
-          logger.error("Failed to clean up orphaned blob", {
-            blobUrl,
-            error: cleanupError,
-          });
-        }
+        // Trigger durable cleanup task for the orphaned blob
+        await tasks.trigger<typeof cleanupBlobsTask>("cleanup-blobs", {
+          blobUrls: [blobUrl],
+        });
         throw new AbortTaskRunError("Failed to persist specification metadata");
       }
 
