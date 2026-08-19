@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
 import { generateText } from "ai";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 import { z } from "zod";
 
 import { readCanvasGraph } from "@/lib/canvas-flow";
@@ -106,19 +106,44 @@ ${JSON.stringify(chatHistory, null, 2)}`,
       await publishAiStatus(roomId, "Saving technical specification…");
 
       const specId = crypto.randomUUID();
-      const blob = await put(`specs/${roomId}/${specId}.md`, result.text, {
-        access: "private",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: "text/markdown; charset=utf-8",
-        cacheControlMaxAge: 60,
-      });
+      const blobPath = `specs/${roomId}/${specId}.md`;
+      let blobUrl: string;
+      try {
+        const blob = await put(blobPath, result.text, {
+          access: "private",
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "text/markdown; charset=utf-8",
+          cacheControlMaxAge: 60,
+        });
+        blobUrl = blob.url;
+      } catch (uploadError) {
+        logger.error("Failed to upload spec to Blob", {
+          roomId,
+          error: uploadError,
+        });
+        throw new AbortTaskRunError("Failed to save specification");
+      }
 
-      await prisma.projectSpec.upsert({
-        where: { id: specId },
-        create: { id: specId, projectId: roomId, filePath: blob.url },
-        update: { filePath: blob.url },
-      });
+      try {
+        await prisma.projectSpec.upsert({
+          where: { id: specId },
+          create: { id: specId, projectId: roomId, filePath: blobUrl },
+          update: { filePath: blobUrl },
+        });
+      } catch {
+        // Clean up the uploaded blob if database write fails
+        try {
+          await del(blobUrl);
+          logger.log("Cleaned up orphaned blob after DB failure", { blobUrl });
+        } catch (cleanupError) {
+          logger.error("Failed to clean up orphaned blob", {
+            blobUrl,
+            error: cleanupError,
+          });
+        }
+        throw new AbortTaskRunError("Failed to persist specification metadata");
+      }
 
       await publishAiStatus(roomId, "Spec generation complete");
 
@@ -132,7 +157,7 @@ ${JSON.stringify(chatHistory, null, 2)}`,
       return {
         roomId,
         specId,
-        filePath: blob.url,
+        filePath: blobUrl,
         spec: result.text,
       };
     } catch (error) {

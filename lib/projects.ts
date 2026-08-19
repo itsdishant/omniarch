@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { ProjectStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { del } from "@vercel/blob";
 
 export function isUniqueConstraintError(error: unknown): boolean {
   return (
@@ -125,7 +126,33 @@ export async function renameOwnedProject(projectId: string, name: string) {
 }
 
 export async function deleteOwnedProject(projectId: string) {
-  return prisma.project.delete({
+  // Fetch blob URLs before deleting the project (cascade will remove ProjectSpec records)
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { canvasJsonPath: true, specs: { select: { filePath: true } } },
+  });
+
+  const blobUrls = [
+    ...(project?.canvasJsonPath ? [project.canvasJsonPath] : []),
+    ...(project?.specs?.map((s) => s.filePath) ?? []),
+  ];
+
+  // Delete the project (cascades to ProjectSpec, ProjectCollaborator, TaskRun)
+  const deletedProject = await prisma.project.delete({
     where: { id: projectId },
   });
+
+  // Clean up associated blobs after successful project deletion
+  for (const url of blobUrls) {
+    if (url) {
+      try {
+        await del(url);
+      } catch (error) {
+        // Log but don't fail the deletion if blob cleanup fails
+        console.error(`Failed to delete blob ${url}:`, error);
+      }
+    }
+  }
+
+  return deletedProject;
 }

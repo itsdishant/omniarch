@@ -1,9 +1,13 @@
 import { z } from "zod";
 import { CanvasNodeDataSchema, CanvasEdgeDataSchema } from "@/types/canvas";
 
+// Limits to prevent excessive prompt sizes and provider costs
+const MAX_CHAT_MESSAGES = 50;
+const MAX_MESSAGE_LENGTH = 8000;
+
 export const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string(),
+  content: z.string().max(MAX_MESSAGE_LENGTH),
   timestamp: z.number(),
 });
 
@@ -27,22 +31,26 @@ export const canvasEdgeSchema = z.object({
   source: z.string(),
   target: z.string(),
   data: CanvasEdgeDataSchema,
-  markerEnd: z.object({
-    type: z.string(),
-    color: z.string(),
-    width: z.number(),
-    height: z.number(),
-  }).optional(),
-  style: z.object({
-    stroke: z.string(),
-    strokeWidth: z.number(),
-    strokeLinecap: z.string(),
-  }).optional(),
+  markerEnd: z
+    .object({
+      type: z.string(),
+      color: z.string(),
+      width: z.number(),
+      height: z.number(),
+    })
+    .optional(),
+  style: z
+    .object({
+      stroke: z.string(),
+      strokeWidth: z.number(),
+      strokeLinecap: z.string(),
+    })
+    .optional(),
 });
 
 export const specGenerationPayloadSchema = z.object({
   roomId: z.string().min(1),
-  chatHistory: z.array(chatMessageSchema),
+  chatHistory: z.array(chatMessageSchema).max(MAX_CHAT_MESSAGES),
   nodes: z.array(canvasNodeSchema),
   edges: z.array(canvasEdgeSchema),
 });

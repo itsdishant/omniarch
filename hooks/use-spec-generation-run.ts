@@ -19,6 +19,7 @@ export function useSpecGenerationRun(options: {
   const room = useRoom();
   const [handle, setHandle] = useState<SpecRunHandle | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
   const finishingRef = useRef(false);
 
   const { error: realtimeError } = useRealtimeRun<typeof generateSpecTask>(
@@ -65,39 +66,47 @@ export function useSpecGenerationRun(options: {
   }, [handle, realtimeError]);
 
   async function startRun() {
-    if (handle) return;
+    if (handle || isStarting) return;
 
     setGenerationError(null);
-    const response = await fetch("/api/ai/spec", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        roomId: room.id,
-        chatHistory: options.chatHistory,
-        nodes: [],
-        edges: [],
-      }),
-    });
+    setIsStarting(true);
+    try {
+      const response = await fetch("/api/ai/spec", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId: room.id,
+          chatHistory: options.chatHistory,
+          nodes: [],
+          edges: [],
+        }),
+      });
 
-    const body = (await response.json().catch(() => null)) as {
-      runId?: string;
-      publicToken?: string;
-      error?: string;
-    } | null;
+      const body = (await response.json().catch(() => null)) as {
+        runId?: string;
+        publicToken?: string;
+        error?: string;
+      } | null;
 
-    if (!response.ok || !body?.runId || !body.publicToken) {
-      const message = body?.error || "Couldn't start spec generation";
-      setGenerationError(message);
-      throw new Error(message);
+      if (!response.ok || !body?.runId || !body.publicToken) {
+        const message = body?.error || "Couldn't start spec generation";
+        setGenerationError(message);
+        setIsStarting(false);
+        throw new Error(message);
+      }
+
+      finishingRef.current = false;
+      setHandle({ runId: body.runId, publicToken: body.publicToken });
+      setIsStarting(false);
+    } catch (error) {
+      setIsStarting(false);
+      throw error;
     }
-
-    finishingRef.current = false;
-    setHandle({ runId: body.runId, publicToken: body.publicToken });
   }
 
   return {
     error: generationError,
-    isRunActive: handle !== null,
+    isRunActive: handle !== null || isStarting,
     startRun,
   };
 }
