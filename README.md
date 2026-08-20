@@ -20,7 +20,7 @@
     <img src="https://img.shields.io/badge/-Vercel_Blob-000000?style=for-the-badge&logo=Vercel&logoColor=white" />
   </div>
 
-  <h3 align="center">OmniArch | Real-Time Collaborative AI System Design Saas Workspace</h3>
+  <h3 align="center">OmniArch | Real-Time Collaborative AI System Design SaaS Workspace</h3>
 
   <div align="center">
     Architect, visualize, and document distributed software systems in real time with an agentic AI partner, collaborative canvas, and automated technical specification generation.
