@@ -186,8 +186,6 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run lint`           | Runs Next.js ESLint verification                          |
 | `npm run deploy:trigger` | Deploys background tasks to Trigger.dev cloud             |
 
-<br />
-
 ## <a name="system-architecture">🏗️ System Architecture & Flows</a>
 
 ```
