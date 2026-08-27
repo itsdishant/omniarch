@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 MD033 MD041 -->
 <div align="center">
   <a href="https://github.com/itsdishant/omniarch" target="_blank">
     <img src="context/screenshots/omniarch-editor-screen.png" alt="OmniArch Workspace Screenshot" width="100%" style="border-radius: 12px; max-height: 500px; object-fit: cover;" />
@@ -5,19 +6,19 @@
   <br /><br />
 
   <div>
-    <img src="https://img.shields.io/badge/-Next.js_16-000000?style=for-the-badge&logo=Next.js&logoColor=white" />
-    <img src="https://img.shields.io/badge/-TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=Tailwind%20CSS&logoColor=white" />
-    <img src="https://img.shields.io/badge/-shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Liveblocks-000000?style=for-the-badge&logo=liveblocks&logoColor=white" />
+    <img src="https://img.shields.io/badge/-Next.js_16-000000?style=for-the-badge&logo=Next.js&logoColor=white" alt="Next.js 16" />
+    <img src="https://img.shields.io/badge/-TypeScript-3178C6?style=for-the-badge&logo=TypeScript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/-Tailwind_CSS_v4-06B6D4?style=for-the-badge&logo=Tailwind%20CSS&logoColor=white" alt="Tailwind CSS v4" />
+    <img src="https://img.shields.io/badge/-shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white" alt="shadcn/ui" />
+    <img src="https://img.shields.io/badge/-Liveblocks-000000?style=for-the-badge&logo=Liveblocks&logoColor=white" alt="Liveblocks" />
     <br />
-    <img src="https://img.shields.io/badge/-React_Flow-FF0072?style=for-the-badge&logo=reactflow&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Google_Gemini_3.6_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Trigger.dev_v4-0B0F19?style=for-the-badge" />
-    <img src="https://img.shields.io/badge/-Prisma_ORM-2D3748?style=for-the-badge&logo=Prisma&logoColor=white" />
-    <img src="https://img.shields.io/badge/-PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Clerk_Auth-6C47FF?style=for-the-badge&logo=Clerk&logoColor=white" />
-    <img src="https://img.shields.io/badge/-Vercel_Blob-000000?style=for-the-badge&logo=Vercel&logoColor=white" />
+    <img src="https://img.shields.io/badge/-React_Flow-FF0072?style=for-the-badge&logo=reactflow&logoColor=white" alt="React Flow" />
+    <img src="https://img.shields.io/badge/-Google_Gemini_3.6_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini 3.6 Flash" />
+    <img src="https://img.shields.io/badge/-Trigger.dev_v4-0B0F19?style=for-the-badge" alt="Trigger.dev v4" />
+    <img src="https://img.shields.io/badge/-Prisma_ORM-2D3748?style=for-the-badge&logo=Prisma&logoColor=white" alt="Prisma ORM" />
+    <img src="https://img.shields.io/badge/-PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/-Clerk_Auth-6C47FF?style=for-the-badge&logo=Clerk&logoColor=white" alt="Clerk Auth" />
+    <img src="https://img.shields.io/badge/-Vercel_Blob-000000?style=for-the-badge&logo=Vercel&logoColor=white" alt="Vercel Blob" />
   </div>
 
   <h3 align="center">OmniArch | Real-Time Collaborative AI System Design SaaS Workspace</h3>
@@ -188,7 +189,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## <a name="system-architecture">🏗️ System Architecture & Flows</a>
 
-```
+## <a name="project-structure">📜 Project Structure</a>
+
+```text
 omniarch/
 ├── app/                        # Next.js App Router (Pages, Layouts & API routes)
 │   ├── (auth)/                 # Clerk sign-in / sign-up auth flows
