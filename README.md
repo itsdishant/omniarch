@@ -38,7 +38,7 @@
 6. 🛡️ [Security & Reliability](#security-and-reliability)
 7. 📜 [Project Structure](#project-structure)
 
-## <a name="introduction">✨ Introduction</a>
+## ✨ <a name="introduction">Introduction</a>
 
 **OmniArch** is an intelligent, real-time collaborative system design workspace tailored for modern engineering teams. It transforms abstract architectural ideation into structured, production-ready system graphs and technical specifications.
 
@@ -46,7 +46,7 @@ Instead of wrestling with static diagramming tools or fragmented whiteboards, en
 
 Once the architecture is finalized, OmniArch synthesizes the graph topology and team chat history into an enterprise-grade Markdown **Technical Specification document** (including data flows, component boundaries, failure modes, and infrastructure recommendations), safely persisted on **Vercel Blob** with in-app preview and protected downloads.
 
-## <a name="tech-stack">⚙️ Tech Stack</a>
+## ⚙️ <a name="tech-stack">Tech Stack</a>
 
 - **[Next.js 16](https://nextjs.org/)** — Full-stack React framework utilizing the App Router, React Server Components, Server Actions, and high-performance API route handlers.
 - **[TypeScript](https://www.typescriptlang.org/)** — Strict, end-to-end type safety spanning database models, Zod runtime validation, Liveblocks storage structures, and React Flow nodes.
@@ -59,7 +59,7 @@ Once the architecture is finalized, OmniArch synthesizes the graph topology and 
 - **[Clerk](https://clerk.com/)** — Enterprise-grade authentication and user management with dark theme styling, protected routes, and backend user enrichment.
 - **[Vercel Blob](https://vercel.com/docs/storage/vercel-blob)** — Secure, private cloud asset storage for serialized canvas autosaves and generated Markdown technical specifications.
 
-## <a name="features">🔋 Features</a>
+## 🔋 <a name="features">Features</a>
 
 👉 **Real-Time Collaborative Canvas**: Full-duplex synchronization powered by Liveblocks and React Flow. See teammates' live cursors, participant avatars, selection states, and thinking indicators on a full-bleed dot-grid canvas.
 
@@ -81,7 +81,7 @@ Once the architecture is finalized, OmniArch synthesizes the graph topology and 
 
 👉 **Ergonomic Canvas Controls**: Built-in zoom in/out, fit-to-view, undo/redo history controls, and keyboard shortcut integrations for a distraction-free workflow.
 
-## <a name="quick-start">🤸 Quick Start</a>
+## 🤸 <a name="quick-start">Quick Start</a>
 
 Follow these steps to set up and run OmniArch locally on your machine.
 
@@ -187,9 +187,88 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `npm run lint`           | Runs Next.js ESLint verification                          |
 | `npm run deploy:trigger` | Deploys background tasks to Trigger.dev cloud             |
 
-## <a name="system-architecture">🏗️ System Architecture & Flows</a>
+## 🏗️ <a name="system-architecture">System Architecture & Flows</a>
 
-## <a name="project-structure">📜 Project Structure</a>
+### System Architecture Diagram
+
+```mermaid
+flowchart LR
+    subgraph Client["Client / Browser"]
+        UI["OmniArch Workspace UI"]
+        Canvas["Collaborative Canvas"]
+        AI["AI Sidebar / Chat"]
+    end
+
+    subgraph App["Next.js Application"]
+        API["API Routes + Server Actions"]
+        Auth["Clerk Authentication"]
+        Project["Project / Spec Services"]
+        Live["Liveblocks Sync Layer"]
+    end
+
+    subgraph Services["Background & AI Services"]
+        Trigger["Trigger.dev Workers"]
+        Gemini["Google Gemini 3.6 Flash"]
+        Blob["Vercel Blob Storage"]
+    end
+
+    subgraph Data["Persistence & State"]
+        DB[("PostgreSQL / Prisma")]
+        Flow[("Liveblocks Room State")]
+    end
+
+    UI --> Canvas
+    UI --> AI
+    UI --> API
+    API --> Auth
+    API --> Project
+    Project --> DB
+    Project --> Live
+    Live --> Flow
+
+    AI --> Trigger
+    Trigger --> Gemini
+    Trigger --> Blob
+    Gemini --> Live
+    Gemini --> Blob
+```
+
+### Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as OmniArch Frontend
+    participant API as Next.js API
+    participant DB as PostgreSQL / Prisma
+    participant TD as Trigger.dev
+    participant GM as Gemini
+    participant LB as Liveblocks
+    participant BL as Vercel Blob
+
+    U->>FE: Describe system architecture
+    FE->>API: POST /api/ai/design
+    API->>DB: Save task metadata
+    API->>TD: Trigger design-agent task
+    TD->>GM: Generate node/edge tool plan
+    GM-->>TD: addNode / moveNode / addEdge
+    TD->>LB: Apply live canvas mutations
+    LB-->>FE: Real-time canvas updates
+    FE-->>U: Architecture appears live on canvas
+
+    U->>FE: Generate technical spec
+    FE->>API: POST /api/ai/spec
+    API->>TD: Trigger generate-spec task
+    TD->>LB: Read current graph state
+    TD->>GM: Generate structured Markdown spec
+    GM-->>TD: Technical specification
+    TD->>BL: Upload spec blob
+    TD->>DB: Save spec metadata
+    BL-->>FE: Preview/download reference
+    FE-->>U: Spec is ready in-app
+```
+
+## 📜 <a name="project-structure">Project Structure</a>
 
 ```text
 omniarch/
@@ -233,7 +312,7 @@ omniarch/
 1. When a project is deleted, active canvas and spec blob URLs are cataloged before DB cascade deletion.
 2. The `cleanup-blobs` Trigger.dev task executes with exponential backoff (5 retries over 1 hour) to guarantee zero orphaned storage artifacts.
 
-## <a name="security-and-reliability">🛡️ Security & Reliability</a>
+## 🛡️ <a name="security-and-reliability">Security & Reliability</a>
 
 - **Bounded LLM Context Limits**: Canvas graph serialization enforces strict safety caps (maximum 200 nodes, 300 edges, 200-character labels, and 100k total prompt characters) to prevent context overflows and token cost spikes.
 - **Race Condition Prevention**: Synchronous execution refs (`startingRef`) prevent duplicate generation runs from simultaneous user triggers.
