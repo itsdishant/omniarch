@@ -1,9 +1,28 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+
+let parsedBaseURL: URL | undefined;
+try {
+  parsedBaseURL = new URL(baseURL);
+} catch {
+  // Fallback for invalid or malformed URLs
+}
+
 const isLocalServer =
   !process.env.PLAYWRIGHT_BASE_URL ||
-  process.env.PLAYWRIGHT_BASE_URL.includes("localhost") ||
-  process.env.PLAYWRIGHT_BASE_URL.includes("127.0.0.1");
+  Boolean(
+    parsedBaseURL &&
+    (parsedBaseURL.hostname === "localhost" ||
+      parsedBaseURL.hostname === "127.0.0.1"),
+  );
+
+const localPort = parsedBaseURL?.port || "3000";
+const webServerUrl = parsedBaseURL
+  ? `${parsedBaseURL.protocol}//${parsedBaseURL.host}`
+  : "http://localhost:3000";
+const webServerCommand =
+  localPort !== "3000" ? `npm run dev -- -p ${localPort}` : "npm run dev";
 
 export default defineConfig({
   testDir: "./tests",
@@ -13,7 +32,7 @@ export default defineConfig({
   globalSetup: "./tests/global.setup.ts",
   globalTeardown: "./tests/global.teardown.ts",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -28,8 +47,8 @@ export default defineConfig({
   ],
   webServer: isLocalServer
     ? {
-        command: "npm run dev",
-        url: "http://localhost:3000",
+        command: webServerCommand,
+        url: webServerUrl,
         reuseExistingServer: !process.env.CI,
         timeout: 120000,
       }
