@@ -32,7 +32,8 @@ The test architecture is designed around four key pillars:
 ```
 tests/
 ├── README.md                                  # Test suite architecture and documentation (this file)
-├── global.setup.ts                            # Global setup fixture: Clerk token & user pool lifecycle
+├── global.setup.ts                            # Global setup: Clerk token, dedicated runner provisioning & state reset
+├── global.teardown.ts                         # Global teardown: Post-run test project database cleanup
 ├── helpers/
 │   └── test-auth.ts                           # Shared authentication & workspace creation test helpers
 ├── auth/                                      # Authentication flows and Clerk form interactions
@@ -76,14 +77,15 @@ tests/
 
 ---
 
-## 🔑 Authentication & Global Setup (`tests/global.setup.ts`)
+## 🔑 Authentication, State Isolation & Lifecycle
 
-Clerk development instances have built-in rate limits and bot challenges (Cloudflare Turnstile). The test suite handles this seamlessly:
+The test suite manages authentication, isolation, and environmental flexibility deterministically:
 
-1. **`clerkSetup()`**: Initializes the testing token from `@clerk/testing/playwright`.
-2. **Quota Management**: Automatically queries the Clerk Backend API to delete ephemeral test users, preventing the 100-user dev instance cap from ever being exceeded.
-3. **Dedicated Runner Account**: Automatically provisions a standard E2E runner account (`omniarch.e2e.runner+clerk_test@example.com`).
-4. **`clerk.signIn()` Helper**: Uses Clerk's secure ticket-based sign-in strategy in `tests/helpers/test-auth.ts` for fast authentication without UI delays or OTP captchas.
+1. **`clerkSetup()`**: Initializes the testing token from `@clerk/testing/playwright` to bypass Cloudflare Turnstile bot detection.
+2. **Dedicated Runner Account**: Automatically provisions a standard E2E runner account (`omniarch.e2e.runner+clerk_test@example.com`) without modifying or deleting any other user accounts in your Clerk instance.
+3. **`clerk.signIn()` Helper**: Uses Clerk's secure ticket-based sign-in strategy in `tests/helpers/test-auth.ts` for fast authentication without UI delays or OTP challenges.
+4. **Isolated Project State (`global.setup.ts` & `global.teardown.ts`)**: Cascading database cleanups run before and after the test suite, resetting test project state so every run is completely fresh and isolated.
+5. **Dynamic Base URL & Port Binding**: `playwright.config.ts` dynamically parses `PLAYWRIGHT_BASE_URL`. If a custom local port is specified (e.g. `http://localhost:3001`), the web server starts and waits on that port. If targeting a remote staging URL, `webServer` is disabled automatically.
 
 ---
 
