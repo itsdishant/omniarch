@@ -4,6 +4,7 @@ dotenv.config({ path: ".env" });
 
 import { clerkSetup } from "@clerk/testing/playwright";
 import { createClerkClient } from "@clerk/backend";
+import { Pool } from "pg";
 import { DEFAULT_E2E_EMAIL, DEFAULT_E2E_PASSWORD } from "./helpers/test-auth";
 
 async function globalSetup() {
@@ -15,38 +16,42 @@ async function globalSetup() {
       publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     });
 
-    // 1. Clean up old ephemeral test users to keep Clerk dev quota clean
-    const userList = await client.users.getUserList({ limit: 100 });
-    console.log(`Current Clerk users count: ${userList.data.length}`);
-
-    for (const user of userList.data) {
-      const email = user.emailAddresses[0]?.emailAddress ?? "";
-      if (
-        (email.includes("+clerk_test@") || email.startsWith("test.") || email.startsWith("collab.") || email.startsWith("signin.")) &&
-        email !== DEFAULT_E2E_EMAIL
-      ) {
-        await client.users.deleteUser(user.id).catch(() => {});
-      }
-    }
-
-    // 2. Ensure standard E2E runner test account exists
+    // 1. Ensure dedicated standard E2E runner test account exists (without deleting other accounts)
     const existing = await client.users.getUserList({
       emailAddress: [DEFAULT_E2E_EMAIL],
     });
 
+    let runnerUserId = existing.data[0]?.id;
+
     if (existing.data.length === 0) {
-      await client.users.createUser({
+      const newUser = await client.users.createUser({
         emailAddress: [DEFAULT_E2E_EMAIL],
         password: DEFAULT_E2E_PASSWORD,
         skipPasswordChecks: true,
         skipPasswordRequirement: false,
       });
-      console.log(`Successfully created test user: ${DEFAULT_E2E_EMAIL}`);
+      runnerUserId = newUser.id;
+      console.log(
+        `Successfully created dedicated test user: ${DEFAULT_E2E_EMAIL}`,
+      );
     } else {
-      console.log(`Test user already exists: ${DEFAULT_E2E_EMAIL}`);
+      console.log(`Dedicated test user active: ${DEFAULT_E2E_EMAIL}`);
+    }
+
+    // 2. Clean up test projects for the dedicated test user to ensure isolated initial state
+    if (runnerUserId && process.env.DATABASE_URL) {
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      try {
+        await pool.query('DELETE FROM "Project" WHERE "ownerId" = $1', [
+          runnerUserId,
+        ]);
+        console.log("Cleaned up existing test projects for isolated run.");
+      } finally {
+        await pool.end().catch(() => {});
+      }
     }
   } catch (error) {
-    console.error("Clerk global setup provisioning notice:", error);
+    console.error("Global setup provisioning notice:", error);
   }
 }
 
