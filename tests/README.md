@@ -29,7 +29,7 @@ The test architecture is designed around four key pillars:
 
 ## 📂 Directory Structure
 
-```
+```text
 tests/
 ├── README.md                                  # Test suite architecture and documentation (this file)
 ├── global.setup.ts                            # Global setup: Clerk token, dedicated runner provisioning & state reset
