@@ -19,6 +19,7 @@
     <img src="https://img.shields.io/badge/-PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white" alt="PostgreSQL" />
     <img src="https://img.shields.io/badge/-Clerk_Auth-6C47FF?style=for-the-badge&logo=Clerk&logoColor=white" alt="Clerk Auth" />
     <img src="https://img.shields.io/badge/-Vercel_Blob-000000?style=for-the-badge&logo=Vercel&logoColor=white" alt="Vercel Blob" />
+    <img src="https://img.shields.io/badge/-Playwright_E2E-2EAD33?style=for-the-badge&logo=Playwright&logoColor=white" alt="Playwright E2E" />
   </div>
 
   <h3 align="center">OmniArch | Real-Time Collaborative AI System Design SaaS Workspace</h3>
@@ -34,9 +35,10 @@
 2. ⚙️ [Tech Stack](#tech-stack)
 3. 🔋 [Features](#features)
 4. 🤸 [Quick Start](#quick-start)
-5. 🏗️ [System Architecture & Flows](#system-architecture)
-6. 🛡️ [Security & Reliability](#security-and-reliability)
-7. 📜 [Project Structure](#project-structure)
+5. 🧪 [E2E Testing](#e2e-testing)
+6. 🏗️ [System Architecture & Flows](#system-architecture)
+7. 🛡️ [Security & Reliability](#security-and-reliability)
+8. 📜 [Project Structure](#project-structure)
 
 ## ✨ <a name="introduction">Introduction</a>
 
@@ -58,6 +60,7 @@ Once the architecture is finalized, OmniArch synthesizes the graph topology and 
 - **[Prisma ORM](https://www.prisma.io/) & [PostgreSQL](https://www.postgresql.org/)** — Multi-file database schema modeling projects, collaborator roles, task executions, and specification metadata with connection caching.
 - **[Clerk](https://clerk.com/)** — Enterprise-grade authentication and user management with dark theme styling, protected routes, and backend user enrichment.
 - **[Vercel Blob](https://vercel.com/docs/storage/vercel-blob)** — Secure, private cloud asset storage for serialized canvas autosaves and generated Markdown technical specifications.
+- **[Playwright](https://playwright.dev/)** — Comprehensive end-to-end (E2E) testing framework integrated with `@clerk/testing` covering all UI features, canvas ergonomics, collaboration, and REST contracts.
 
 ## 🔋 <a name="features">Features</a>
 
@@ -178,14 +181,38 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Available Scripts
 
-| Command                  | Description                                               |
-| :----------------------- | :-------------------------------------------------------- |
-| `npm run dev`            | Starts the Next.js development server at `localhost:3000` |
-| `npm run dev:trigger`    | Starts the local Trigger.dev task execution worker        |
-| `npm run build`          | Builds the Next.js application for production             |
-| `npm run prebuild`       | Synchronizes and generates the Prisma Client delegates    |
-| `npm run lint`           | Runs Next.js ESLint verification                          |
-| `npm run deploy:trigger` | Deploys background tasks to Trigger.dev cloud             |
+| Command                   | Description                                               |
+| :------------------------ | :-------------------------------------------------------- |
+| `npm run dev`             | Starts the Next.js development server at `localhost:3000` |
+| `npm run dev:trigger`     | Starts the local Trigger.dev task execution worker        |
+| `npm run build`           | Builds the Next.js application for production             |
+| `npm run prebuild`        | Synchronizes and generates the Prisma Client delegates    |
+| `npm run lint`            | Runs Next.js ESLint verification                          |
+| `npm run deploy:trigger`  | Deploys background tasks to Trigger.dev cloud             |
+| `npm run test:e2e`        | Runs the complete Playwright E2E test suite (36 tests)    |
+| `npm run test:e2e:headed` | Runs Playwright E2E tests in a visible browser window     |
+
+## 🧪 <a name="e2e-testing">E2E Testing</a>
+
+OmniArch includes a modular, full-coverage End-to-End (E2E) test suite powered by **Playwright** and **@clerk/testing**. Every application domain is tested in isolation with dedicated test specifications.
+
+```bash
+# Run the entire E2E test suite (headless)
+npm run test:e2e
+
+# Run with interactive Playwright UI mode
+npx playwright test --ui
+
+# Run specific domain suites
+npx playwright test tests/auth/ tests/routing/
+npx playwright test tests/canvas/
+npx playwright test tests/editor/
+npx playwright test tests/collaboration/
+npx playwright test tests/ai/
+npx playwright test tests/api/
+```
+
+For complete architectural details, directory mapping, and test guidelines, see [tests/README.md](tests/README.md).
 
 ## 🏗️ <a name="system-architecture">System Architecture & Flows</a>
 
@@ -282,6 +309,13 @@ omniarch/
 ├── hook/ & hooks/              # Custom React hooks (Liveblocks, Autosave, Realtime runs)
 ├── lib/                        # Shared server utilities, Prisma client & access control
 ├── prisma/                     # Multi-file schema definitions (Projects, Specs, TaskRuns)
+├── tests/                      # Modular Playwright E2E test suite (8 feature domains)
+│   ├── auth/ & routing/        # Authentication & route guard tests
+│   ├── canvas/                 # Visual architecture canvas & custom shapes tests
+│   ├── editor/                 # Workspace management & navigation tests
+│   ├── collaboration/          # Live multi-user sharing & collaborator tests
+│   ├── ai/                     # AI Architect prompt & spec generation tests
+│   └── api/                    # Backend REST API contract tests
 ├── trigger/                    # Trigger.dev background task definitions
 │   ├── design-agent.ts         # Agentic graph builder via Gemini tool calls
 │   ├── generate-spec.ts        # Markdown technical specification generator

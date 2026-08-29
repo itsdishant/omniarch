@@ -10,7 +10,9 @@
     "start": "next start",
     "lint": "eslint",
     "dev:trigger": "npx trigger.dev@latest dev",
-    "deploy:trigger": "npx trigger.dev@latest deploy"
+    "deploy:trigger": "npx trigger.dev@latest deploy",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.45",
@@ -47,6 +49,8 @@
   },
   "devDependencies": {
     "@clerk/eslint-plugin": "0.2.0",
+    "@clerk/testing": "^2.2.31",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@trigger.dev/build": "^4.5.11",
     "@types/node": "^20.19.43",
