@@ -74,5 +74,6 @@ General
 - `useRealtimeRun` connects using the returned token
 - Input is disabled while the run is active
 - Status strip appears only during active runs
-- Chat updates appear across multiple sessions
+- Chat updates appear across multiple sessions, including the first open of a
+  project that already has `ai-chat` history
 - No TypeScript or build errors

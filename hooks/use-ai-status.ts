@@ -9,11 +9,16 @@ import {
   getLatestAiStatusText,
 } from "@/types/tasks";
 
-export function useAiStatus() {
-  const createFeed = useCreateFeed();
+export function useAiGenerating() {
   const othersThinking = useOthersMapped(
     (other) => other.presence.thinking === true,
   );
+
+  return othersThinking.some(([, thinking]) => thinking);
+}
+
+export function useAiStatusText() {
+  const createFeed = useCreateFeed();
   const { messages, error, isLoading } = useFeedMessages(AI_STATUS_FEED_ID, {
     limit: 20,
   });
@@ -22,11 +27,9 @@ export function useAiStatus() {
     void createFeed(AI_STATUS_FEED_ID).catch(() => undefined);
   }, [createFeed]);
 
-  const isGenerating = othersThinking.some(([, thinking]) => thinking);
-  const statusText =
-    error || isLoading || !messages
-      ? undefined
-      : getLatestAiStatusText(messages);
+  if (error || isLoading || !messages) {
+    return undefined;
+  }
 
-  return { isGenerating, statusText };
+  return getLatestAiStatusText(messages);
 }

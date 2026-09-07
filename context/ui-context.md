@@ -28,6 +28,15 @@ All colors are defined as CSS custom properties in `globals.css` and mapped to T
 
 Tailwind utility names map to these variables. Use `bg-base`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
 
+## Logo & Brand Identity
+
+The OmniArch identity combines an architectural structural arch (`Arch` / `A`) with an interconnected distributed network graph (`Omni` / `O`).
+
+- **Brand Logomark:** Defined in `public/logo-icon.svg` and `app/icon.svg` (served automatically by Next.js as browser favicon). Features a dark base shield (`#111114`), an illuminated blueprint coordinate grid, isometric hex-arch facets (`#00F2FE` $\rightarrow$ `#00C8D4` on the left, `#8B82FF` $\rightarrow$ `#6457F9` on the right), and a central nexus core diamond with glowing vertex nodes.
+- **Horizontal Logo Lockup:** Defined in `public/logo.svg`, pairing the logomark with geometric typography (`Omni` in white + `Arch` in cyan gradient) and uppercase subtitle badge.
+- **Component:** `components/ui/omniarch-logo.tsx` (`OmniArchLogo`), supporting `variant="full" | "icon"`, responsive `size` presets (`sm`, `md`, `lg`, `xl`), and `showTagline` toggle.
+- **Usage:** Rendered in `components/auth/auth-split-layout.tsx` (auth header) and `components/editor/editor-navbar.tsx` (centered home navbar identity).
+
 ## Typography
 
 | Role      | Font       | CSS Variable        |
@@ -136,15 +145,19 @@ Transparent top bar (`h-14`), no bottom border, no `bg-surface` fill.
 - `/editor` (home): both sidebars **closed**. Create-project copy and CTA are centered in the canvas panel.
 - `/editor/[roomId]`: the project sidebar is **closed** by default (URL load or selecting a project from the list). Open it from the navbar toggle. The AI Copilot panel stays **closed** until the navbar AI button is clicked. The canvas fits the loaded diagram on first presentation.
 
-### AI Copilot panel
+### AI Workspace panel
 
-Right column, `w-80`, `rounded-2xl` surface.
+Right overlay, `w-80`, `rounded-2xl` surface (`bg-base/95`, `border-surface-border`, `shadow-lg`). Closed with `translateX(calc(100% + 1.5rem))`.
 
-- Header: `AI Copilot` + `Placeholder panel.` and a spark icon.
-- Body card: robot icon, `Chat surface pending`.
-- Footer card: `FUTURE HOOKS` label for prompt/spec work still out of scope.
-
-Real chat later replaces the placeholder cards; keep the panel chrome.
+- Header: bot icon, `AI Workspace`, `Collaborate with OmniArch`, close button.
+- Tabs: `AI Architect` and `Specs`.
+- Architect empty state: starter chips, auto-resizing prompt, send button.
+- Architect history: WhatsApp-style centered day pills (`Today` / `Yesterday` /
+  `January 2, 2023`) and 12-hour times (`2:30 PM`) at the bottom-right of each
+  bubble. User bubbles use the green chat fill; assistant bubbles use elevated
+  surfaces.
+- Live chat/status hooks wait until the Liveblocks room is `connected` so first
+  open of a project still shows existing `ai-chat` messages.
 
 ## Icons
 

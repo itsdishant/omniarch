@@ -8,6 +8,9 @@ status signals. Do not add the actual AI generation flow yet.
 
 1. Add AI thinking state to the sidebar.
    - show a small status indicator when AI is working
+   - subscribe to `ai-status-feed` only after the room is connected (same gate
+     as Architect chat). Presence thinking (`useAiGenerating`) can load first
+     in the live sidebar shell without starting feed fetches.
    - make the status visible to everyone in the room
    - disable the chat input while generation is active
    - show a loading state on the send button
@@ -19,7 +22,8 @@ status signals. Do not add the actual AI generation flow yet.
    - follow Liveblocks best practices for feeds/presence instead of creating
      parallel realtime state
    - create or reuse a Liveblocks feed named `ai-status-feed`
-   - subscribe to the latest feed message in the sidebar
+   - subscribe to the latest feed message in the sidebar after the room is
+     connected (`useAiStatusText`)
    - show only the most recent status message
    - keep the feed generic enough for design and spec generation later
 

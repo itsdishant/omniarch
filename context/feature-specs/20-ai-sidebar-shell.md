@@ -41,10 +41,14 @@ on building out the sidebar UI inside it.
      - `Create a chat app architecture`
      - `Build a CI/CD pipeline`
    - style starter chips as soft pills using `bg-subtle` and `text-accent-text`
-   - user messages should be right-aligned with `bg-brand-dim border-brand/50
-border-2 text-copy-primary`
+   - user messages should be right-aligned with the green chat fill from
+     `NODE_COLORS`
    - assistant messages should be left-aligned with `bg-elevated border
-border-surface-border text-accent-text`
+     border-surface-border`
+   - each bubble shows the sender, message body, and a 12-hour time at the
+     bottom-right (`2:30 PM`)
+   - when messages span days, insert a centered pill (`Today`, `Yesterday`, or
+     `January 2, 2023`) before the first message of that day
    - input area with an auto-resizing textarea, around 72px min height and 160px
      max height
    - send button should use `bg-accent text-white`
@@ -75,6 +79,6 @@ border-surface-border text-accent-text`
 - AI sidebar is separated into its own component.
 - Existing floating slide-in behavior is preserved.
 - Sidebar includes AI Architect and Specs tabs.
-- AI Architect tab has empty state, starter chips, and input UI.
+- AI Architect tab has empty state, starter chips, input UI, day pills, and 12-hour bubble times.
 - Specs tab has a generate button and a static demo spec card.
 - `npm run build` passes.

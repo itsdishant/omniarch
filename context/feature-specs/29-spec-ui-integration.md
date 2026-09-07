@@ -100,7 +100,9 @@ The `useSpecGenerationRun` hook manages the entire generation lifecycle:
 
 ### 6. Date Formatting
 
-- `formatSpecDate(createdAt)`: Uses `Intl.DateTimeFormat` with `dateStyle: "medium"`, `timeStyle: "short"`
+- Shared helpers in `lib/utils.ts` use a 12-hour clock (`en-US`, `hour12: true`).
+- `formatSpecDate(createdAt)` delegates to `formatDateTime` (`Apr 6, 2023, 2:30 PM`).
+- Architect chat day pills use `formatChatDayLabel`; bubble times use `formatClock`.
 
 ## UI Details
 
@@ -137,7 +139,7 @@ The `useSpecGenerationRun` hook manages the entire generation lifecycle:
 - The `nodes` and `edges` sent to `/api/ai/spec` are empty arrays — the task reads the live canvas via `readCanvasGraph(roomId)`
 - Chat history is sourced from the `ai-chat` Liveblocks feed via `useAiChat()` hook
 - Realtime run tracking uses Trigger.dev's `useRealtimeRun` with a 1-hour scoped public token
-- Status updates during generation come from the `ai-status-feed` Liveblocks feed (via `statusText` prop passed from `AiSidebarLive`)
+- Status updates during generation come from the `ai-status-feed` Liveblocks feed (`useAiStatusText` inside the live Specs tab after the room is connected)
 
 ## Check When Done
 

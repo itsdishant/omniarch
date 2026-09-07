@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useFeedMessages } from "@liveblocks/react";
 import {
   useCreateFeed,
   useCreateFeedMessage,
+  useFeedMessages,
+  useStatus,
 } from "@liveblocks/react/suspense";
 
 import {
@@ -18,17 +19,37 @@ export interface AiChatFeedItem extends AiChatMessage {
   id: string;
 }
 
-export function useAiChat() {
-  const { user } = useUser();
+export function AiChatReady({
+  children,
+  fallback,
+}: {
+  children: ReactNode;
+  fallback: ReactNode;
+}) {
+  const status = useStatus();
   const createFeed = useCreateFeed();
-  const createFeedMessage = useCreateFeedMessage();
-  const { messages, error, isLoading } = useFeedMessages(AI_CHAT_FEED_ID, {
-    limit: 50,
-  });
 
   useEffect(() => {
+    if (status !== "connected") {
+      return;
+    }
+
     void createFeed(AI_CHAT_FEED_ID).catch(() => undefined);
-  }, [createFeed]);
+  }, [createFeed, status]);
+
+  if (status !== "connected") {
+    return fallback;
+  }
+
+  return children;
+}
+
+export function useAiChat() {
+  const { user } = useUser();
+  const createFeedMessage = useCreateFeedMessage();
+  const { messages } = useFeedMessages(AI_CHAT_FEED_ID, {
+    limit: 50,
+  });
 
   const chatMessages: AiChatFeedItem[] = (messages ?? [])
     .flatMap((message) => {
@@ -63,7 +84,5 @@ export function useAiChat() {
   return {
     messages: chatMessages,
     sendMessage,
-    isLoading,
-    error,
   };
 }
