@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="fav-l" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#00C8D4" />
+    </linearGradient>
+    <linearGradient id="fav-r" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B82FF" />
+      <stop offset="100%" stop-color="#6457F9" />
+    </linearGradient>
+    <linearGradient id="fav-t" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE" />
+      <stop offset="100%" stop-color="#8B82FF" />
+    </linearGradient>
+    <radialGradient id="fav-bg-glow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#00C8D4" stop-opacity="0.3" />
+      <stop offset="60%" stop-color="#6457F9" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#080809" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <!-- Background Shield -->
+  <rect width="128" height="128" rx="28" fill="#111114" />
+  <rect width="128" height="128" rx="28" fill="url(#fav-bg-glow)" />
+  <rect width="124" height="124" x="2" y="2" rx="26" stroke="#2A2A30" stroke-width="2" />
+  
+  <!-- Architectural Arch & Nodes -->
+  <path d="M42 34 L64 22 L86 34 L76 42 L64 35 L52 42 Z" fill="url(#fav-t)" />
+  <path d="M42 34 L52 42 L38 68 L26 64 Z" fill="url(#fav-l)" />
+  <path d="M26 64 L38 68 L38 90 L26 84 Z" fill="#00A2AC" />
+  <path d="M38 68 L50 74 L50 96 L38 90 Z" fill="url(#fav-l)" />
+  <path d="M86 34 L76 42 L90 68 L102 64 Z" fill="url(#fav-r)" />
+  <path d="M102 64 L90 68 L90 90 L102 84 Z" fill="#4B3DB8" />
+  <path d="M90 68 L78 74 L78 96 L90 90 Z" fill="url(#fav-r)" />
+  
+  <!-- Center Nexus Diamond -->
+  <polygon points="64,48 78,57 64,66 50,57" fill="#18181C" stroke="url(#fav-t)" stroke-width="3" />
+  <line x1="64" y1="35" x2="64" y2="48" stroke="#00F2FE" stroke-width="3" stroke-linecap="round" />
+  <line x1="50" y1="57" x2="38" y2="68" stroke="#00C8D4" stroke-width="2.5" stroke-linecap="round" />
+  <line x1="78" y1="57" x2="90" y2="68" stroke="#8B82FF" stroke-width="2.5" stroke-linecap="round" />
+  
+  <!-- Vertex Nodes -->
+  <circle cx="64" cy="22" r="4.5" fill="#FFFFFF" />
+  <circle cx="26" cy="64" r="4.5" fill="#00F2FE" />
+  <circle cx="102" cy="64" r="4.5" fill="#8B82FF" />
+  <circle cx="64" cy="57" r="5" fill="#FFFFFF" stroke="#6457F9" stroke-width="2" />
+  <circle cx="50" cy="96" r="3.5" fill="#00C8D4" />
+  <circle cx="78" cy="96" r="3.5" fill="#6457F9" />
+</svg>
