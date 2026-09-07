@@ -134,6 +134,7 @@ change.
 - Implemented `context/feature-specs/25-sidebar-chat-feed.md`. Room chat uses Liveblocks feed `ai-chat` with Zod validation and the existing sidebar composer. `npm run build` passes.
 - Follow-up: first-open Architect history. Do not start `useFeedMessages` in the sidebar suspense fallback; gate with `AiChatReady` until `connected`. WhatsApp-style day pills and 12-hour clocks in `lib/utils.ts`. E2E covers history on reopen plus timestamp UI. Trigger.dev local worker is a separate `npm run dev:trigger` process from Next.js.
 - Implemented `context/feature-specs/26-design-agent-frontend.md`. Sidebar submit triggers `design-agent` via `/api/ai/design`, subscribes with `useRealtimeRun`, and posts completion/errors to `ai-chat`. `npm run build` passes.
+- Added custom OmniArch SVG branding assets: logomark (`public/logo-icon.svg`, `app/icon.svg`), horizontal lockup (`public/logo.svg`), scalable favicon (`public/favicon.svg`), and reusable `OmniArchLogo` component (`components/ui/omniarch-logo.tsx`). Integrated logo in `AuthSplitLayout` and `EditorNavbar`, updated dynamic copyright year in auth layout, and set up favicon metadata in `app/layout.tsx`.
 
 ## Canvas review findings (fixed)
 

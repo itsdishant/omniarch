@@ -30,6 +30,16 @@ test.describe("Editor - Workspace Navbar", () => {
     await expect(aiBtn).toBeVisible();
     await expect(closeBtn).toBeVisible();
 
+    // In workspace mode, centered logo is hidden in favor of project title
+    const workspaceHeader = page.locator("header");
+    await expect(
+      workspaceHeader.getByRole("heading", {
+        level: 1,
+        name: new RegExp(projectName),
+      }),
+    ).toBeVisible();
+    await expect(workspaceHeader.getByLabel("OmniArch Logo")).toHaveCount(0);
+
     // Clicking Close returns to /editor home
     await closeBtn.click();
     await page.waitForURL(/\/editor($|\?)/);
@@ -40,6 +50,14 @@ test.describe("Editor - Workspace Navbar", () => {
       page.getByRole("heading", {
         name: /create a project or open an existing one/i,
       }),
+    ).toBeVisible();
+
+    // On editor home, centered OmniArch logo is visible in the navbar
+    const homeHeader = page.locator("header");
+    const logo = homeHeader.getByLabel("OmniArch Logo");
+    await expect(logo).toBeVisible();
+    await expect(
+      homeHeader.getByText("OmniArch", { exact: true }),
     ).toBeVisible();
   });
 });

@@ -37,8 +37,8 @@ tests/
 ├── helpers/
 │   └── test-auth.ts                           # Shared authentication & workspace creation test helpers
 ├── auth/                                      # Authentication flows and Clerk form interactions
-│   ├── sign-in.spec.ts                        # Sign-in form rendering, controls, navigation, and login
-│   ├── sign-up.spec.ts                        # Sign-up form rendering, controls, and navigation
+│   ├── sign-in.spec.ts                        # Sign-in form, OmniArch branding, dynamic copyright, SVG favicons, login
+│   ├── sign-up.spec.ts                        # Sign-up form, OmniArch branding, dynamic copyright, navigation
 │   └── route-protection.spec.ts               # Unauthenticated route guards for /editor and /editor/[roomId]
 ├── routing/                                   # Application routing and error handling
 │   ├── landing-redirect.spec.ts               # Landing page redirects (unauthenticated vs authenticated)
@@ -49,7 +49,7 @@ tests/
 │   ├── project-rename.spec.ts                 # Project rename modal and title updates
 │   ├── project-delete.spec.ts                 # Project delete confirmation and removal from list
 │   ├── project-sidebar.spec.ts                # Slide-over sidebar drawer, tab toggle, and navigation
-│   └── navbar.spec.ts                         # Workspace navbar identity, actions, and close button
+│   └── navbar.spec.ts                         # Workspace navbar identity, home centered OmniArch logo, actions, close
 ├── canvas/                                    # Interactive visual architecture canvas (ReactFlow / Liveblocks)
 │   ├── shape-panel.spec.ts                    # Floating toolbar with all 6 custom shape types
 │   ├── starter-templates.spec.ts              # Starter templates modal preview and architecture import

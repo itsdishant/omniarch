@@ -1,24 +1,25 @@
 import { FileText, Sparkles, Users } from "lucide-react";
 import type { ReactNode } from "react";
+import { OmniArchLogo } from "@/components/ui/omniarch-logo";
 
 const features = [
   {
-    title: "AI Architecture Generation",
-    description:
-      "Describe your system, AI maps it to nodes and edges on a live canvas.",
     icon: Sparkles,
+    title: "AI-Powered Generation",
+    description:
+      "Transform textual architectural ideas into comprehensive diagrams with intelligent routing.",
   },
   {
-    title: "Real-time Collaboration",
-    description:
-      "Live cursors, presence indicators, and shared node editing across your team.",
     icon: Users,
+    title: "Multiplayer Canvas",
+    description:
+      "Collaborate with teammates simultaneously with live cursors and shared state synchronization.",
   },
   {
-    title: "Instant Spec Generation",
-    description:
-      "Export a complete Markdown technical spec directly from the canvas graph.",
     icon: FileText,
+    title: "Automated Specifications",
+    description:
+      "Generate exportable Markdown documentation and systems design docs directly from your architecture.",
   },
 ];
 
@@ -30,10 +31,7 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 bg-accent-dim" />
         <div className="relative flex w-full flex-col px-12 py-10 xl:px-16">
           <div className="flex items-center gap-2.5">
-            <span className="size-7 rounded-xl bg-brand" aria-hidden />
-            <p className="font-heading text-sm font-semibold tracking-tight text-copy-primary">
-              OmniArch
-            </p>
+            <OmniArchLogo variant="full" size="md" />
           </div>
 
           <div className="flex flex-1 flex-col justify-center">
@@ -65,7 +63,7 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
           </div>
 
           <p className="text-xs text-copy-faint">
-            © 2026 OmniArch. All rights reserved.
+            © {new Date().getFullYear()} OmniArch. All rights reserved.
           </p>
         </div>
       </aside>

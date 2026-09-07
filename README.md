@@ -1,6 +1,10 @@
 <!-- markdownlint-disable MD013 MD033 MD041 -->
 <div align="center">
   <a href="https://github.com/itsdishant/omniarch" target="_blank">
+    <img src="public/logo.svg" alt="OmniArch Logo" width="280" />
+  </a>
+  <br /><br />
+  <a href="https://github.com/itsdishant/omniarch" target="_blank">
     <img src="context/screenshots/omniarch-editor-screen.png" alt="OmniArch Workspace Screenshot" width="100%" style="border-radius: 12px; max-height: 500px; object-fit: cover;" />
   </a>
   <br /><br />
@@ -309,6 +313,7 @@ omniarch/
 ├── hook/ & hooks/              # Custom React hooks (Liveblocks, Autosave, Realtime runs)
 ├── lib/                        # Shared server utilities, Prisma client & access control
 ├── prisma/                     # Multi-file schema definitions (Projects, Specs, TaskRuns)
+├── public/                     # Static brand assets (SVG logomark, logo lockup, favicon)
 ├── tests/                      # Modular Playwright E2E test suite (8 feature domains)
 │   ├── auth/ & routing/        # Authentication & route guard tests
 │   ├── canvas/                 # Visual architecture canvas & custom shapes tests

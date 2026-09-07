@@ -24,6 +24,18 @@ test.describe("Authentication - Sign Up", () => {
       "href",
       /\/sign-in/,
     );
+
+    // Verify AuthSplitLayout branding: OmniArchLogo & dynamic copyright year
+    const authAside = page.locator("aside");
+    await expect(authAside.getByLabel("OmniArch Logo")).toBeVisible();
+    await expect(
+      authAside.getByText("OmniArch", { exact: true }),
+    ).toBeVisible();
+
+    const currentYear = new Date().getFullYear();
+    await expect(
+      authAside.getByText(new RegExp(`©\\s*${currentYear}\\s*OmniArch`)),
+    ).toBeVisible();
   });
 
   test("can navigate from sign-up to sign-in", async ({ page }) => {

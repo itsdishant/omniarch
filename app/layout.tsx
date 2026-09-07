@@ -17,7 +17,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "OmniArch",
-  description: "OmniArch",
+  description: "Real-time Collaborative AI System Design Workspace",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

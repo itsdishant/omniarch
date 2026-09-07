@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import type { RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
+import { OmniArchLogo } from "@/components/ui/omniarch-logo";
 import { useCanvasSaveStatus } from "@/hook/useCanvasAutosave";
 
 interface EditorNavbarProps {
@@ -72,9 +73,9 @@ export function EditorNavbar({
         ) : null}
       </div>
       {!showWorkspaceActions ? (
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-sm font-medium text-copy-primary">
-          OmniArch
-        </h1>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <OmniArchLogo variant="full" size="sm" showTagline={false} />
+        </div>
       ) : null}
       <div className="flex shrink-0 items-center gap-2">
         {showWorkspaceActions ? (
