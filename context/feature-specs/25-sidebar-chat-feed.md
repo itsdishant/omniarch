@@ -17,9 +17,19 @@ handles AI progress and presence updates.
    - do not mix it with `ai-status-feed`
 
 2. Wire the chat feed into the sidebar.
-   - subscribe to `ai-chat` in the sidebar chat area
-   - render chat messages in order
-   - show sender, timestamp, and message content
+
+   Subscribe only after the Liveblocks room is connected. `useFeedMessages` for
+   feeds uses a 5s timeout with no retry, so fetching during the outer
+   `ClientSideSuspense` fallback (before the websocket is up) can cache an empty
+   or failed query and hide existing history on first project open.
+
+   - wrap live chat hooks in `AiChatReady` (`hooks/use-ai-chat.ts`) so they run
+     only when `useStatus() === "connected"`
+   - do not mount `useAiChat` / suspense `useFeedMessages` in the outer sidebar
+     loading fallback
+   - create-or-reuse feed `ai-chat` after connect (`useCreateFeed`)
+   - render validated messages in time order
+   - show sender, WhatsApp-style day pills, 12-hour bubble times, and content
    - keep the styling consistent with the existing sidebar UI
    - use Tailwind utilities and existing shadcn components where they fit
 
@@ -34,6 +44,18 @@ handles AI progress and presence updates.
    - message shape should include sender, role, content, and timestamp
    - validate feed messages before rendering them
 
+5. Chat timestamps (WhatsApp-style, 12-hour clock).
+
+   Shared formatters live in `lib/utils.ts` (`formatClock`, `formatDateTime`,
+   `formatChatDayLabel`, `isSameLocalDay`). Use 12-hour time everywhere
+   (`en-US`, `hour12: true`), for example `2:30 PM`.
+
+   - insert a centered day pill when the calendar day changes:
+     `Today`, `Yesterday`, or `January 2, 2023`
+   - style pills as `rounded-full bg-subtle` with `text-copy-muted`
+   - put a 12-hour clock (`formatClock`) at the bottom-right of every bubble
+   - spec list/preview dates use `formatDateTime` (`Apr 6, 2023, 2:30 PM`)
+
 ## Scope Limits
 
 - don’t add AI-generated replies yet
@@ -44,8 +66,10 @@ handles AI progress and presence updates.
 
 ## Check When Done
 
-- Sidebar subscribes to the `ai-chat` feed.
+- Sidebar subscribes to the `ai-chat` feed after the room is connected.
+- Opening a project with existing messages shows that history on first open.
 - Users can send chat messages through the existing sidebar input.
 - Chat messages are validated before rendering.
+- Day pills and 12-hour bubble times match the WhatsApp-style layout.
 - `ai-chat` remains separate from `ai-status-feed`.
 - `npm run build` passes.

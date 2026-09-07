@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -26,13 +27,23 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useAiChat, type AiChatFeedItem } from "@/hooks/use-ai-chat";
+import {
+  AiChatReady,
+  useAiChat,
+  type AiChatFeedItem,
+} from "@/hooks/use-ai-chat";
 import { useDesignAgentRun } from "@/hooks/use-design-agent-run";
 import { useSpecGenerationRun } from "@/hooks/use-spec-generation-run";
-import { useAiStatus } from "@/hooks/use-ai-status";
+import { useAiGenerating, useAiStatusText } from "@/hooks/use-ai-status";
 import { NODE_COLORS } from "@/types/canvas";
 import type { ChatMessage } from "@/types/spec";
-import { cn } from "@/lib/utils";
+import {
+  cn,
+  formatChatDayLabel,
+  formatClock,
+  formatDateTime,
+  isSameLocalDay,
+} from "@/lib/utils";
 
 interface AiSidebarProps {
   isOpen: boolean;
@@ -50,10 +61,14 @@ const starterPrompts = [
 export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   return (
     <ErrorBoundary
-      fallback={<AiSidebarView isOpen={isOpen} onClose={onClose} />}
+      fallback={
+        <AiSidebarView isOpen={isOpen} onClose={onClose} live={false} />
+      }
     >
       <ClientSideSuspense
-        fallback={<AiSidebarView isOpen={isOpen} onClose={onClose} />}
+        fallback={
+          <AiSidebarView isOpen={isOpen} onClose={onClose} live={false} />
+        }
       >
         <AiSidebarLive isOpen={isOpen} onClose={onClose} />
       </ClientSideSuspense>
@@ -62,14 +77,14 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 }
 
 function AiSidebarLive({ isOpen, onClose }: AiSidebarProps) {
-  const { isGenerating, statusText } = useAiStatus();
+  const isGenerating = useAiGenerating();
 
   return (
     <AiSidebarView
       isOpen={isOpen}
       onClose={onClose}
+      live
       isGenerating={isGenerating}
-      statusText={statusText}
     />
   );
 }
@@ -77,9 +92,12 @@ function AiSidebarLive({ isOpen, onClose }: AiSidebarProps) {
 function AiSidebarView({
   isOpen,
   onClose,
+  live = false,
   isGenerating = false,
-  statusText,
-}: AiSidebarProps & { isGenerating?: boolean; statusText?: string }) {
+}: AiSidebarProps & {
+  live?: boolean;
+  isGenerating?: boolean;
+}) {
   return (
     <aside
       aria-hidden={!isOpen}
@@ -121,8 +139,11 @@ function AiSidebarView({
           </Button>
         </div>
 
-        <Tabs defaultValue="architect" className="min-h-0 flex-1">
-          <TabsList className="mx-3 mt-3 grid w-[calc(100%-1.5rem)] grid-cols-2 bg-subtle">
+        <Tabs
+          defaultValue="architect"
+          className="min-h-0 flex-1 overflow-hidden"
+        >
+          <TabsList className="mx-3 mt-3 grid w-[calc(100%-1.5rem)] shrink-0 grid-cols-2 bg-subtle">
             <TabsTrigger
               value="architect"
               className="text-copy-muted data-[state=active]:bg-accent data-[state=active]:text-accent-foreground"
@@ -136,11 +157,17 @@ function AiSidebarView({
               Specs
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="architect" className="min-h-0">
-            <ArchitectTab isGenerating={isGenerating} statusText={statusText} />
+          <TabsContent
+            value="architect"
+            className="flex min-h-0 flex-col overflow-hidden"
+          >
+            <ArchitectTab live={live} isGenerating={isGenerating} />
           </TabsContent>
-          <TabsContent value="specs" className="min-h-0">
-            <SpecsTab statusText={statusText} />
+          <TabsContent
+            value="specs"
+            className="flex min-h-0 flex-col overflow-hidden"
+          >
+            <SpecsTab live={live} />
           </TabsContent>
         </Tabs>
       </div>
@@ -148,46 +175,38 @@ function AiSidebarView({
   );
 }
 
-function ArchitectTab({
-  isGenerating,
-  statusText,
-}: {
-  isGenerating: boolean;
-  statusText?: string;
-}) {
+function ChatLoadingFallback() {
   return (
-    <ErrorBoundary
-      fallback={
-        <ArchitectChatPanel
-          isGenerating={isGenerating}
-          statusText={statusText}
-        />
-      }
-    >
-      <ClientSideSuspense
-        fallback={
-          <ArchitectChatPanel
-            isGenerating={isGenerating}
-            statusText={statusText}
-          />
-        }
-      >
-        <ArchitectChatLive
-          isGenerating={isGenerating}
-          statusText={statusText}
-        />
+    <div className="flex h-full min-h-0 flex-1 items-center justify-center text-copy-muted">
+      <Loader2 className="h-4 w-4 animate-spin" />
+    </div>
+  );
+}
+
+function ArchitectTab({
+  live,
+  isGenerating,
+}: {
+  live: boolean;
+  isGenerating: boolean;
+}) {
+  if (!live) {
+    return <ArchitectChatPanel isGenerating={isGenerating} />;
+  }
+
+  return (
+    <ErrorBoundary fallback={<ArchitectChatPanel isGenerating={isGenerating} />}>
+      <ClientSideSuspense fallback={<ChatLoadingFallback />}>
+        <AiChatReady fallback={<ChatLoadingFallback />}>
+          <ArchitectChatLive isGenerating={isGenerating} />
+        </AiChatReady>
       </ClientSideSuspense>
     </ErrorBoundary>
   );
 }
 
-function ArchitectChatLive({
-  isGenerating,
-  statusText,
-}: {
-  isGenerating: boolean;
-  statusText?: string;
-}) {
+function ArchitectChatLive({ isGenerating }: { isGenerating: boolean }) {
+  const statusText = useAiStatusText();
   const { messages, sendMessage } = useAiChat();
   const sendAssistant = (content: string) =>
     sendMessage(content, { role: "assistant", sender: "OmniArch" });
@@ -207,11 +226,15 @@ function ArchitectChatLive({
   );
 }
 
-function formatChatTime(timestamp: number) {
-  return new Date(timestamp).toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+function isNewChatDay(
+  previous: AiChatFeedItem | undefined,
+  current: AiChatFeedItem,
+) {
+  if (!previous) {
+    return true;
+  }
+
+  return !isSameLocalDay(previous.timestamp, current.timestamp);
 }
 
 function ArchitectChatPanel({
@@ -295,10 +318,10 @@ function ArchitectChatPanel({
   const showStatusStrip = isRunActive || isGenerating;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 px-3 pb-3 pt-3">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-3 px-3 pb-3 pt-3">
       <div
         ref={listRef}
-        className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+        className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1"
       >
         {messages.length === 0 ? (
           <div className="flex min-h-full flex-col items-center justify-center px-3 py-8 text-center">
@@ -326,44 +349,71 @@ function ArchitectChatPanel({
             </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={cn(
-                "flex",
-                message.role === "user" ? "justify-end" : "justify-start",
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[88%] rounded-xl px-3 py-2 text-sm",
-                  message.role === "assistant" &&
-                    "border border-surface-border bg-elevated text-copy-primary",
-                )}
-                style={
-                  message.role === "user"
-                    ? {
-                        backgroundColor: chatGreen.text,
-                        color: chatGreen.fill,
-                      }
-                    : undefined
-                }
-              >
+          messages.map((message, index) => {
+            const previous = messages[index - 1];
+            const showDayLabel = isNewChatDay(previous, message);
+            const isoTime = new Date(message.timestamp).toISOString();
+
+            return (
+              <Fragment key={message.id}>
+                {showDayLabel ? (
+                  <div className="flex justify-center py-2">
+                    <time
+                      className="rounded-full bg-subtle px-3 py-1 text-[11px] font-medium leading-4 text-copy-muted"
+                      dateTime={isoTime}
+                    >
+                      {formatChatDayLabel(message.timestamp)}
+                    </time>
+                  </div>
+                ) : null}
                 <div
                   className={cn(
-                    "mb-1 flex items-baseline justify-between gap-2 text-[10px]",
-                    message.role === "user" ? "opacity-80" : "text-copy-muted",
+                    "flex",
+                    message.role === "user" ? "justify-end" : "justify-start",
                   )}
                 >
-                  <span className="truncate font-medium">{message.sender}</span>
-                  <time dateTime={new Date(message.timestamp).toISOString()}>
-                    {formatChatTime(message.timestamp)}
-                  </time>
+                  <div
+                    className={cn(
+                      "max-w-[88%] rounded-xl px-3 pt-2 pb-1.5 text-sm",
+                      message.role === "assistant" &&
+                        "border border-surface-border bg-elevated text-copy-primary",
+                    )}
+                    style={
+                      message.role === "user"
+                        ? {
+                            backgroundColor: chatGreen.text,
+                            color: chatGreen.fill,
+                          }
+                        : undefined
+                    }
+                  >
+                    <p
+                      className={cn(
+                        "mb-1 truncate text-[10px] font-medium",
+                        message.role === "user"
+                          ? "opacity-80"
+                          : "text-copy-muted",
+                      )}
+                    >
+                      {message.sender}
+                    </p>
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <time
+                      className={cn(
+                        "mt-1 block text-right text-[10px] leading-4",
+                        message.role === "user"
+                          ? "opacity-70"
+                          : "text-copy-muted",
+                      )}
+                      dateTime={isoTime}
+                    >
+                      {formatClock(message.timestamp)}
+                    </time>
+                  </div>
                 </div>
-                {message.content}
-              </div>
-            </div>
-          ))
+              </Fragment>
+            );
+          })
         )}
       </div>
 
@@ -426,7 +476,24 @@ function ArchitectChatPanel({
   );
 }
 
-function SpecsTab({ statusText }: { statusText?: string }) {
+function SpecsTab({ live }: { live: boolean }) {
+  if (!live) {
+    return <ChatLoadingFallback />;
+  }
+
+  return (
+    <ErrorBoundary fallback={<ChatLoadingFallback />}>
+      <ClientSideSuspense fallback={<ChatLoadingFallback />}>
+        <AiChatReady fallback={<ChatLoadingFallback />}>
+          <SpecsTabLive />
+        </AiChatReady>
+      </ClientSideSuspense>
+    </ErrorBoundary>
+  );
+}
+
+function SpecsTabLive() {
+  const statusText = useAiStatusText();
   const room = useRoom();
   const { messages: chatMessages } = useAiChat();
   const [specs, setSpecs] = useState<ProjectSpecSummary[]>([]);
@@ -660,10 +727,7 @@ interface ProjectSpecSummary {
 }
 
 function formatSpecDate(createdAt: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(createdAt));
+  return formatDateTime(createdAt);
 }
 
 function SpecPreviewDialog({

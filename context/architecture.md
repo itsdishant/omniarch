@@ -53,7 +53,7 @@
 - Input: user prompt, project context, and current canvas state (`readCanvasGraph`).
 - Execution: Trigger.dev task `design-agent` (`trigger/design-agent.ts`).
 - Model: Gemini 3.6 Flash via `@ai-sdk/google` and `GOOGLE_API_KEY`. `generateText` with canvas tools (`lib/design-canvas-tools.ts`); do not use `Output.object()` or OpenRouter.
-- Output: node and edge updates written into the shared Liveblocks room `flow` storage as tools run. Status messages go to feed `ai-status-feed`. Ephemeral presence user `omniarch-ai` shows `cursor` and `thinking` until the run ends.
+- Output: node and edge updates written into the shared Liveblocks room `flow` storage as tools run. Status messages go to feed `ai-status-feed`. Chat messages live on feed `ai-chat` and load only after the room websocket is connected so first project open still shows history. Ephemeral presence user `omniarch-ai` shows `cursor` and `thinking` until the run ends.
 
 ### Spec Generation
 

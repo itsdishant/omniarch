@@ -33,8 +33,9 @@
 - Use CSS custom property tokens defined in `globals.css` — no raw Tailwind color classes like `zinc-*` or hardcoded hex values.
 - Reference tokens through their Tailwind utility names: `bg-base`, `text-copy-primary`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
 - Use Tailwind’s canonical class names. Do not write an arbitrary value when a scale class exists (`h-42` not `h-[168px]`; `w-full max-w-5xl` not `w-[min(100%,64rem)]`). Put styles on the element itself (`titleClassName` / `descriptionClassName`) instead of descendant hacks like `[&_[data-slot=…]]` or `**:data-[slot=…]` — Tailwind treats those as the same class and `suggestCanonicalClasses` will keep warning. Arbitrary values are only for sizes that have no equivalent on the scale.
-- Maintain the radius scale in `ui-context.md`: `rounded-xl` for small UI, `rounded-2xl` for panels, `rounded-3xl` for modals, `rounded-full` for editor chrome CTAs (Share, AI, New Project).
+- Maintain the radius scale in `ui-context.md`: `rounded-xl` for small UI, `rounded-2xl` for panels, `rounded-3xl` for modals, `rounded-full` for editor chrome CTAs (Share, AI, New Project) and Architect chat day pills.
 - Canvas surfaces use `.canvas-dots` (or React Flow dots with the same 20px gap). Do not use a line grid.
+- Display clocks in 12-hour `en-US` format via `formatClock` / `formatDateTime` in `lib/utils.ts`. Do not use 24-hour times in the UI.
 - Follow `context/ui-context.md` for editor chrome. Do not fill the navbar, wrap the canvas in a floating card, or left-align home empty states.
 
 ## API Routes
@@ -49,6 +50,7 @@
 
 - Import React hooks and providers from `@liveblocks/react/suspense`.
 - Wrap collaborative UI in `ClientSideSuspense` and `react-error-boundary` `ErrorBoundary`.
+- Do not call Liveblocks feed hooks (`useFeedMessages`) until the room status is `connected`. Feed fetches time out after 5s with no retry; starting them in a suspense fallback hides existing chat on first project open.
 - Keep room membership in Prisma; issue access tokens with `prepareSession` after `findAccessibleProjectForViewer`.
 - Create rooms with `getOrCreateRoom` and private `defaultAccesses`.
 - Park `#liveblocks-badge` and `.react-flow__attribution` off-canvas with `transform: translate(120vw, 120vh)` and `pointer-events: none`. Do not `display: none`.
@@ -66,6 +68,7 @@
 - Design generation uses Gemini through `@ai-sdk/google` (`GOOGLE_API_KEY`).
 - Canvas mutations from the design agent use `generateText` tools in `lib/design-canvas-tools.ts`, then Liveblocks `mutateStorage` on `flow`. Do not use `Output.object()` or a second LLM provider.
 - Shared AI status uses Liveblocks feed `ai-status-feed`. Ephemeral AI presence uses `setPresence` with user id `omniarch-ai`.
+- Architect chat history uses Liveblocks feed `ai-chat`. Subscribe only after the room is connected (`AiChatReady`). UI clocks are 12-hour. Local Trigger.dev runs require `npm run dev:trigger` in addition to `npm run dev`.
 
 ## File Organization
 

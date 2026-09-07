@@ -68,9 +68,15 @@ npm install
 # Generate Prisma client
 npm run prebuild
 
-# Run development server
+# Terminal 1: Next.js development server
 npm run dev
+
+# Terminal 2: Trigger.dev background task runner
+npm run dev:trigger
 ```
+
+The Trigger.dev web app shows “Your local dev server is not connected” until
+`npm run dev:trigger` is running.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser.
 
@@ -78,6 +84,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser.
 
 ```bash
 npm run dev          # Start development server
+npm run dev:trigger  # Start local Trigger.dev worker
 npm run build        # Production build
 npm run lint         # Run ESLint
 npm run prebuild     # Generate Prisma client
