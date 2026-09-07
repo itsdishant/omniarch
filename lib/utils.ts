@@ -36,7 +36,10 @@ export function formatChatDayLabel(value: Date | string | number) {
     return "Today";
   }
 
-  if (day === today - 24 * 60 * 60 * 1000) {
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (day === startOfLocalDay(yesterday)) {
     return "Yesterday";
   }
 
