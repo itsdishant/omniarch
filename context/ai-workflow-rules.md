@@ -42,6 +42,11 @@ Project-specific styling, layout changes, and feature logic must be implemented 
 
 Only modify these files when a task explicitly requires it.
 
+## Codebase Exploration & Knowledge Graph
+
+- The repository is indexed with **Graphify** (`graphify-out/`).
+- Refer to `graphify-out/GRAPH_REPORT.md` and the graph outputs when investigating dependencies, module coupling, or cross-cutting impacts.
+
 ## Keeping Docs In Sync
 
 Update the relevant context file whenever implementation changes:
@@ -56,5 +61,5 @@ Progress state must reflect the actual state of the implementation, not the inte
 ## Before Moving To The Next Unit
 
 1. The current unit works end to end within its defined scope.
-2. No invariant defined in `architecture-context.md` was violated.
+2. No invariant defined in `architecture.md` was violated.
 3. `progress-tracker.md` reflects the completed work.
