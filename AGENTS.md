@@ -13,11 +13,19 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 Read the following files in order before implementing or making any architectural decision:
 
 1. `context/project-overview.md` — product definition, goals, features, and scope
-2. `context/architecture-context.md` — system structure, boundaries, storage model, and invariants
+2. `context/architecture.md` — system structure, boundaries, storage model, and invariants
 3. `context/ui-context.md` — theme, colors, typography, canvas design, and component conventions
 4. `context/code-standards.md` — implementation rules and conventions
 5. `context/ai-workflow-rules.md` — development workflow, scoping rules, and delivery approach
 6. `context/progress-tracker.md` — current phase, completed work, open questions, and next steps
+
+## Codebase Knowledge Graph (Graphify)
+
+OmniArch is indexed with **Graphify** in `graphify-out/`:
+
+- **Graph Report:** `graphify-out/GRAPH_REPORT.md` — Overview of god nodes, architectural communities, and dependencies.
+- **Visual Graph:** `graphify-out/graph.html` / `graphify-out/graph.json` — Persistent graph of all symbols, modules, and relations.
+- When exploring codebase architecture, symbol connections, or data flows, inspect `graphify-out/` or use Graphify tools before deep grep/find.
 
 Update `context/progress-tracker.md` after each meaningful implementation change.
 
