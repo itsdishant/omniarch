@@ -28,6 +28,7 @@
     "@prisma/extension-accelerate": "^3.0.1",
     "@trigger.dev/react-hooks": "^4.5.11",
     "@trigger.dev/sdk": "^4.5.11",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.8.0",
     "@xyflow/react": "12.11.2",
     "ai": "^7.0.68",
