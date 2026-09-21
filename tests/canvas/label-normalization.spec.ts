@@ -18,6 +18,7 @@ test.describe("Canvas label text normalization", () => {
     expect(decodeSerializedNewlines("gateway\\nroutes requests")).toBe(
       "gateway\nroutes requests",
     );
+    expect(decodeSerializedNewlines("api\\ngateway")).toBe("api\ngateway");
   });
 
   test("preserves literal backslashes in Windows-style paths", () => {

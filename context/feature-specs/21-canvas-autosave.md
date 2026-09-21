@@ -28,7 +28,7 @@ Blob, and the saved blob URL should be stored on the Prisma project record.
    - fetch the saved canvas JSON from Vercel Blob
    - return the canvas state to the editor
 
-3. Add an autosave hook in the `/hook` folder.
+3. Add an autosave hook in the `hooks/` folder.
    - watch the canvas nodes and edges
    - debounce saves to avoid excessive writes
    - save through the canvas API route

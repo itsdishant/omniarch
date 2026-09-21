@@ -15,7 +15,7 @@ import type { RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import { OmniArchLogo } from "@/components/ui/omniarch-logo";
-import { useCanvasSaveStatus } from "@/hook/useCanvasAutosave";
+import { useCanvasSaveStatus } from "@/hooks/useCanvasAutosave";
 
 interface EditorNavbarProps {
   sidebarOpen: boolean;

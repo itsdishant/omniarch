@@ -310,7 +310,7 @@ omniarch/
 ├── components/                 # React UI Component Library
 │   ├── editor/                 # Canvas wrapper, custom shapes, controls & AI sidebar
 │   └── ui/                     # Reusable shadcn/ui components
-├── hook/ & hooks/              # Custom React hooks (Liveblocks, Autosave, Realtime runs)
+├── hooks/                      # Custom React hooks (Liveblocks, Autosave, Realtime runs)
 ├── lib/                        # Shared server utilities, Prisma client & access control
 ├── prisma/                     # Multi-file schema definitions (Projects, Specs, TaskRuns)
 ├── public/                     # Static brand assets (SVG logomark, logo lockup, favicon)

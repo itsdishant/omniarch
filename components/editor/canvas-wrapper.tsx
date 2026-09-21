@@ -60,7 +60,7 @@ import {
 import { useStarterTemplateImport } from "@/components/editor/starter-template-context";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { useCanvasAutosave } from "@/hook/useCanvasAutosave";
+import { useCanvasAutosave } from "@/hooks/useCanvasAutosave";
 import type {
   CanvasEdge,
   CanvasNode,

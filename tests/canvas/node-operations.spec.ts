@@ -82,6 +82,23 @@ test.describe("Canvas - Node Operations", () => {
     await expect(firstNode).not.toContainText("Auth\\nService");
   });
 
+  test("renders escaped lowercase \\n as a line break", async ({ page }) => {
+    await createAndSignInTestUser(page, { prefix: "node.esc.nl" });
+    await createTestProject(page, "Node Escaped Newline Project");
+    await importFirstTemplate(page);
+
+    const firstNode = page.locator(".react-flow__node").first();
+    await expect(firstNode).toBeVisible({ timeout: 15000 });
+
+    const labelInput = await editFirstNodeLabel(page, firstNode);
+    await labelInput.fill("gateway\\nroutes");
+    await labelInput.press("Enter");
+
+    await expect(firstNode).toContainText("gateway");
+    await expect(firstNode).toContainText("routes");
+    await expect(firstNode).not.toContainText("gateway\\nroutes");
+  });
+
   test("preserves literal backslashes in technical labels", async ({
     page,
   }) => {
