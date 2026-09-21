@@ -60,7 +60,7 @@ import {
 import { useStarterTemplateImport } from "@/components/editor/starter-template-context";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import { useCanvasAutosave } from "@/hook/useCanvasAutosave";
+import { useCanvasAutosave } from "@/hooks/useCanvasAutosave";
 import type {
   CanvasEdge,
   CanvasNode,
@@ -74,6 +74,7 @@ import {
   DEFAULT_NODE_TEXT_COLOR,
   DEFAULT_SHAPE_SIZES,
 } from "@/types/canvas";
+import { commitEdgeLabel, commitNodeLabel } from "@/lib/visible-text";
 
 interface CanvasWrapperProps {
   roomId: string;
@@ -465,7 +466,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
           id: nodeId,
           item: {
             ...node,
-            data: { ...node.data, label },
+            data: { ...node.data, label: commitNodeLabel(label) },
           },
         },
       ]);
@@ -506,7 +507,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
           item: {
             ...edge,
             type: "canvasEdge",
-            data: { ...edge.data, label },
+            data: { ...edge.data, label: commitEdgeLabel(label) },
           },
         },
       ]);

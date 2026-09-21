@@ -44,10 +44,10 @@ test.describe("Canvas - Edge Connections", () => {
     // Label input should appear
     const edgeInput = page.getByLabel("Edge label");
     await expect(edgeInput).toBeVisible();
-    await edgeInput.fill("gRPC");
+    await edgeInput.fill("C:\\new-service");
     await edgeInput.press("Enter");
 
-    // Updated label badge should be visible
-    await expect(page.getByText("gRPC").first()).toBeVisible();
+    await expect(page.getByText("C:\\new-service").first()).toBeVisible();
+    await expect(page.getByText("C: ew-service")).toHaveCount(0);
   });
 });

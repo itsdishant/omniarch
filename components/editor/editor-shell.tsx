@@ -18,7 +18,7 @@ import {
   useStarterTemplateImport,
 } from "@/components/editor/starter-template-context";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
-import { CanvasSaveStatusProvider } from "@/hook/useCanvasAutosave";
+import { CanvasSaveStatusProvider } from "@/hooks/useCanvasAutosave";
 import type { EditorProjectListItem } from "@/lib/projects";
 
 interface EditorShellProps {

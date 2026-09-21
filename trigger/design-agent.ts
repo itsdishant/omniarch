@@ -80,6 +80,7 @@ Rules:
 - Give every new node and edge a stable unique id
 - Add nodes before the edges that connect them
 - Edge labels should be short (HTTP, events, gRPC, etc.)
+- Node labels may use real line breaks (for example a name on the first line and a role on the next). Never write the two-character sequence \\n; use an actual newline.
 - Keep diagrams readable and not overcrowded
 - Call as many tools as needed in each step, then stop when the diagram is complete`,
         prompt: `User request:\n${prompt}\n\nCurrent canvas:\n${JSON.stringify(graph)}`,

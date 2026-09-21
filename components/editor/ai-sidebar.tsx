@@ -44,6 +44,7 @@ import {
   formatDateTime,
   isSameLocalDay,
 } from "@/lib/utils";
+import { decodeSerializedNewlines } from "@/lib/visible-text";
 
 interface AiSidebarProps {
   isOpen: boolean;
@@ -195,7 +196,9 @@ function ArchitectTab({
   }
 
   return (
-    <ErrorBoundary fallback={<ArchitectChatPanel isGenerating={isGenerating} />}>
+    <ErrorBoundary
+      fallback={<ArchitectChatPanel isGenerating={isGenerating} />}
+    >
       <ClientSideSuspense fallback={<ChatLoadingFallback />}>
         <AiChatReady fallback={<ChatLoadingFallback />}>
           <ArchitectChatLive isGenerating={isGenerating} />
@@ -397,7 +400,9 @@ function ArchitectChatPanel({
                     >
                       {message.sender}
                     </p>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="whitespace-pre-wrap">
+                      {decodeSerializedNewlines(message.content)}
+                    </p>
                     <time
                       className={cn(
                         "mt-1 block text-right text-[10px] leading-4",

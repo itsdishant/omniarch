@@ -1,6 +1,8 @@
 "use client";
 
 import type { CanvasShape } from "@/types/canvas";
+import { cn } from "@/lib/utils";
+import { displayNodeLabel } from "@/lib/visible-text";
 
 export interface ShapeVisualProps {
   width: number;
@@ -20,6 +22,27 @@ function shapeStroke(selected: boolean) {
   };
 }
 
+function ShapeLabel({
+  label,
+  fallback,
+  className,
+}: {
+  label: string;
+  fallback: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "min-h-0 min-w-0 max-h-full max-w-full overflow-hidden px-3 py-1.5 text-center text-sm leading-snug font-medium wrap-break-word whitespace-pre-wrap",
+        className,
+      )}
+    >
+      {displayNodeLabel(label, fallback)}
+    </span>
+  );
+}
+
 function RectangleShape({
   width,
   height,
@@ -31,7 +54,7 @@ function RectangleShape({
 }: ShapeVisualProps) {
   return (
     <div
-      className="flex h-full w-full items-center justify-center rounded-md transition-all"
+      className="flex h-full w-full items-center justify-center overflow-hidden rounded-md transition-all"
       style={{
         ...shapeStroke(selected),
         backgroundColor: fill,
@@ -40,11 +63,7 @@ function RectangleShape({
         height: `${height}px`,
       }}
     >
-      {hideLabel ? null : (
-        <span className="max-w-full truncate px-3 py-1.5 text-sm font-medium">
-          {label || "Rectangle"}
-        </span>
-      )}
+      {hideLabel ? null : <ShapeLabel label={label} fallback="Rectangle" />}
     </div>
   );
 }
@@ -60,7 +79,7 @@ function PillShape({
 }: ShapeVisualProps) {
   return (
     <div
-      className="flex h-full w-full items-center justify-center transition-all"
+      className="flex h-full w-full items-center justify-center overflow-hidden transition-all"
       style={{
         borderRadius: "9999px",
         ...shapeStroke(selected),
@@ -71,9 +90,7 @@ function PillShape({
       }}
     >
       {hideLabel ? null : (
-        <span className="max-w-full truncate px-4 py-1.5 text-sm font-medium">
-          {label || "Pill"}
-        </span>
+        <ShapeLabel label={label} fallback="Pill" className="px-4" />
       )}
     </div>
   );
@@ -100,11 +117,7 @@ function CircleShape({
         height: `${height}px`,
       }}
     >
-      {hideLabel ? null : (
-        <span className="max-w-full truncate px-3 py-1.5 text-sm font-medium">
-          {label || "Circle"}
-        </span>
-      )}
+      {hideLabel ? null : <ShapeLabel label={label} fallback="Circle" />}
     </div>
   );
 }
@@ -120,7 +133,7 @@ function DiamondShape({
 }: ShapeVisualProps) {
   return (
     <div
-      className="flex h-full w-full items-center justify-center"
+      className="flex h-full w-full items-center justify-center overflow-hidden"
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       <svg
@@ -136,13 +149,15 @@ function DiamondShape({
         />
       </svg>
       <div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
         style={{ color: textColor }}
       >
         {hideLabel ? null : (
-          <span className="max-w-[80%] truncate px-2 py-1 text-sm font-medium">
-            {label || "Diamond"}
-          </span>
+          <ShapeLabel
+            label={label}
+            fallback="Diamond"
+            className="max-w-[80%] px-2 py-1"
+          />
         )}
       </div>
     </div>
@@ -160,7 +175,7 @@ function HexagonShape({
 }: ShapeVisualProps) {
   return (
     <div
-      className="flex h-full w-full items-center justify-center"
+      className="flex h-full w-full items-center justify-center overflow-hidden"
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       <svg
@@ -176,13 +191,15 @@ function HexagonShape({
         />
       </svg>
       <div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
         style={{ color: textColor }}
       >
         {hideLabel ? null : (
-          <span className="max-w-[70%] truncate px-2 py-1 text-sm font-medium">
-            {label || "Hexagon"}
-          </span>
+          <ShapeLabel
+            label={label}
+            fallback="Hexagon"
+            className="max-w-[70%] px-2 py-1"
+          />
         )}
       </div>
     </div>
@@ -216,7 +233,7 @@ function CylinderShape({
 
   return (
     <div
-      className="flex h-full w-full items-center justify-center"
+      className="flex h-full w-full items-center justify-center overflow-hidden"
       style={{ width: `${width}px`, height: `${height}px` }}
     >
       <svg
@@ -281,13 +298,15 @@ function CylinderShape({
         />
       </svg>
       <div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
         style={{ color: textColor }}
       >
         {hideLabel ? null : (
-          <span className="max-w-[70%] truncate px-2 py-1 text-sm font-medium">
-            {label || "Cylinder"}
-          </span>
+          <ShapeLabel
+            label={label}
+            fallback="Cylinder"
+            className="max-w-[70%] px-2 py-1"
+          />
         )}
       </div>
     </div>
