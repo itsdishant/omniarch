@@ -74,7 +74,7 @@ import {
   DEFAULT_NODE_TEXT_COLOR,
   DEFAULT_SHAPE_SIZES,
 } from "@/types/canvas";
-import { normalizeEdgeLabel, normalizeNodeLabel } from "@/lib/visible-text";
+import { commitEdgeLabel, commitNodeLabel } from "@/lib/visible-text";
 
 interface CanvasWrapperProps {
   roomId: string;
@@ -466,7 +466,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
           id: nodeId,
           item: {
             ...node,
-            data: { ...node.data, label: normalizeNodeLabel(label) },
+            data: { ...node.data, label: commitNodeLabel(label) },
           },
         },
       ]);
@@ -507,7 +507,7 @@ function CanvasFlow({ projectId }: { projectId: string }) {
           item: {
             ...edge,
             type: "canvasEdge",
-            data: { ...edge.data, label: normalizeEdgeLabel(label) },
+            data: { ...edge.data, label: commitEdgeLabel(label) },
           },
         },
       ]);
@@ -554,62 +554,6 @@ function CanvasFlow({ projectId }: { projectId: string }) {
       onNodesChange(changes);
     }
   }, [nodes, onNodesChange]);
-
-  const hydratedEscapedLabels = useRef(false);
-  useEffect(() => {
-    if (hydratedEscapedLabels.current || nodes.length === 0) {
-      return;
-    }
-    const nodeChanges = nodes.flatMap((node) => {
-      const label = normalizeNodeLabel(node.data.label);
-      if (label === node.data.label) {
-        return [];
-      }
-      return [
-        {
-          type: "replace" as const,
-          id: node.id,
-          item: {
-            ...node,
-            data: { ...node.data, label },
-          },
-        },
-      ];
-    });
-    hydratedEscapedLabels.current = true;
-    if (nodeChanges.length > 0) {
-      onNodesChange(nodeChanges);
-    }
-  }, [nodes, onNodesChange]);
-
-  const hydratedEscapedEdgeLabels = useRef(false);
-  useEffect(() => {
-    if (hydratedEscapedEdgeLabels.current || edges.length === 0) {
-      return;
-    }
-    const edgeChanges = edges.flatMap((edge) => {
-      const raw = edge.data?.label ?? "";
-      const label = normalizeEdgeLabel(raw);
-      if (label === raw) {
-        return [];
-      }
-      return [
-        {
-          type: "replace" as const,
-          id: edge.id,
-          item: {
-            ...edge,
-            type: "canvasEdge" as const,
-            data: { ...edge.data, label },
-          },
-        },
-      ];
-    });
-    hydratedEscapedEdgeLabels.current = true;
-    if (edgeChanges.length > 0) {
-      onEdgesChange(edgeChanges);
-    }
-  }, [edges, onEdgesChange]);
 
   const [dragPreview, setDragPreview] = useState<{
     shape: CanvasShape;

@@ -24,8 +24,9 @@ Add resizing and inline label editing to canvas nodes.
 
 4. Show intended line breaks in labels instead of the characters `\n`.
    - decode escaped `\n` / `\r` sequences on AI writes, graph reads, display, and Architect chat
-   - wrap node labels so real newlines are visible
-   - rewrite existing collaborative node and edge labels that still contain escaped newlines when the canvas loads
+   - leave other backslash characters as the user typed them
+   - wrap node labels so real newlines are visible, and clip them inside the node
+   - whitespace-only labels show the shape placeholder
    - keep edge badges single-line after decoding (collapse newlines to spaces)
 
 ## Scope Limits
@@ -43,5 +44,7 @@ Add resizing and inline label editing to canvas nodes.
 - Label editing updates node labels through the existing sync flow.
 - Editing closes on blur or Escape.
 - Escaped `\n` in existing and new labels renders as a real line break.
+- Labels with only whitespace show the shape placeholder.
+- Literal backslashes in technical labels are preserved.
 - Text interactions do not trigger canvas drag or pan.
 - `npm run build` passes without type errors.

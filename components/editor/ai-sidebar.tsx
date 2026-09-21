@@ -44,7 +44,7 @@ import {
   formatDateTime,
   isSameLocalDay,
 } from "@/lib/utils";
-import { decodeEscapedNewlines } from "@/lib/visible-text";
+import { decodeSerializedNewlines } from "@/lib/visible-text";
 
 interface AiSidebarProps {
   isOpen: boolean;
@@ -401,7 +401,7 @@ function ArchitectChatPanel({
                       {message.sender}
                     </p>
                     <p className="whitespace-pre-wrap">
-                      {decodeEscapedNewlines(message.content)}
+                      {decodeSerializedNewlines(message.content)}
                     </p>
                     <time
                       className={cn(

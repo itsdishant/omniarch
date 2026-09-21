@@ -10,14 +10,14 @@ import {
 
 import type { CanvasEdge } from "@/types/canvas";
 import { DEFAULT_EDGE_COLOR, DEFAULT_EDGE_STROKE_WIDTH } from "@/types/canvas";
-import { normalizeEdgeLabel } from "@/lib/visible-text";
+import { commitEdgeLabel, normalizeEdgeLabel } from "@/lib/visible-text";
 
 export const EdgeActionsContext = createContext<{
   onLabelChange: (edgeId: string, label: string) => void;
 } | null>(null);
 
 function sanitizeEdgeLabel(value: string) {
-  return normalizeEdgeLabel(value);
+  return commitEdgeLabel(value);
 }
 
 export function CanvasEdgeComponent({
@@ -44,7 +44,7 @@ export function CanvasEdgeComponent({
     borderRadius: 8,
   });
 
-  const savedLabel = sanitizeEdgeLabel(data?.label ?? "");
+  const savedLabel = normalizeEdgeLabel(data?.label ?? "");
   const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(savedLabel);

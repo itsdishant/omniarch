@@ -1,25 +1,81 @@
 /**
- * Turn escaped newline sequences from models/JSON into real line breaks.
- * Leaves already-decoded newlines unchanged.
+ * Convert JSON/AI escaped newlines into real line breaks without treating
+ * Windows-style paths like `C:\new-service` as serialization damage.
  */
-export function decodeEscapedNewlines(value: string): string {
+function isDriveLetterPrefix(value: string, backslashIndex: number) {
+  return (
+    backslashIndex >= 2 &&
+    value[backslashIndex - 1] === ":" &&
+    /[A-Za-z]/.test(value[backslashIndex - 2] ?? "")
+  );
+}
+
+export function decodeSerializedNewlines(value: string): string {
   if (!value.includes("\\")) {
     return value;
   }
 
-  return value
-    .replace(/\\r\\n/g, "\n")
-    .replace(/\\n/g, "\n")
-    .replace(/\\r/g, "\n");
+  let result = "";
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] !== "\\") {
+      result += value[i];
+      continue;
+    }
+
+    if (isDriveLetterPrefix(value, i)) {
+      result += "\\";
+      continue;
+    }
+
+    const next = value[i + 1];
+    const afterEscape = value[i + 2];
+    const looksLikeWordContinuation =
+      typeof afterEscape === "string" && /[a-z]/.test(afterEscape);
+
+    if (next === "r" && value[i + 2] === "\\" && value[i + 3] === "n") {
+      result += "\n";
+      i += 3;
+      continue;
+    }
+    if (next === "n" && !looksLikeWordContinuation) {
+      result += "\n";
+      i += 1;
+      continue;
+    }
+    if (next === "r" && !looksLikeWordContinuation) {
+      result += "\n";
+      i += 1;
+      continue;
+    }
+
+    result += "\\";
+  }
+
+  return result;
 }
+
+export const decodeEscapedNewlines = decodeSerializedNewlines;
 
 export function normalizeNodeLabel(value: string): string {
-  return decodeEscapedNewlines(value);
+  return decodeSerializedNewlines(value);
 }
 
-export function normalizeEdgeLabel(value: string): string {
-  return decodeEscapedNewlines(value)
+export function commitNodeLabel(value: string): string {
+  return value.trim() === "" ? "" : value;
+}
+
+export function displayNodeLabel(label: string, fallback: string): string {
+  const text = decodeSerializedNewlines(label);
+  return text.trim() === "" ? fallback : text;
+}
+
+export function commitEdgeLabel(value: string): string {
+  return value
     .replace(/[\r\n]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+export function normalizeEdgeLabel(value: string): string {
+  return commitEdgeLabel(decodeSerializedNewlines(value));
 }
