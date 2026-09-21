@@ -14,12 +14,19 @@ Add resizing and inline label editing to canvas nodes.
    - double-click the center/label area of a node to edit its label
    - show placeholder text in the same centered position when the label is empty
    - keep editing smooth without causing layout shifts
-   - show a single-line input directly over the label while editing
+   - show a textarea over the label while editing
    - update the label as users type
+   - `Enter` commits; `Shift+Enter` inserts a line break
    - close editing on blur or `Escape`
    - prevent text editing interactions from dragging or panning the canvas
 
 3. Keep all node updates connected to the existing collaborative canvas state.
+
+4. Show intended line breaks in labels instead of the characters `\n`.
+   - decode escaped `\n` / `\r` sequences on AI writes, graph reads, display, and Architect chat
+   - wrap node labels so real newlines are visible
+   - rewrite existing collaborative node and edge labels that still contain escaped newlines when the canvas loads
+   - keep edge badges single-line after decoding (collapse newlines to spaces)
 
 ## Scope Limits
 
@@ -35,5 +42,6 @@ Add resizing and inline label editing to canvas nodes.
 - Double-clicking a node opens inline label editing.
 - Label editing updates node labels through the existing sync flow.
 - Editing closes on blur or Escape.
+- Escaped `\n` in existing and new labels renders as a real line break.
 - Text interactions do not trigger canvas drag or pan.
 - `npm run build` passes without type errors.

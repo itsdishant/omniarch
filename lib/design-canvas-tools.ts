@@ -56,7 +56,11 @@ export function createDesignCanvasTools(roomId: string) {
         shape: shapeSchema,
         x: z.number().describe("X position on the 20px grid"),
         y: z.number().describe("Y position on the 20px grid"),
-        label: z.string().describe("Visible node label"),
+        label: z
+          .string()
+          .describe(
+            "Visible node label. Use real line breaks, not the characters \\n.",
+          ),
         color: z.string().optional().describe("Fill color from the palette"),
         width: z.number().optional(),
         height: z.number().optional(),

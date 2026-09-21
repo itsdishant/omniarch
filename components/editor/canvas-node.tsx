@@ -25,6 +25,7 @@ import {
   resolveNodeColorPair,
   SHAPE_NAMES,
 } from "@/types/canvas";
+import { normalizeNodeLabel } from "@/lib/visible-text";
 
 const MIN_SHAPE_SIZES: Record<CanvasShape, { width: number; height: number }> =
   {
@@ -168,7 +169,7 @@ export function resolveNodeSize(value: unknown, fallback: number): number {
 }
 
 function sanitizeNodeLabel(value: string) {
-  return value.replace(/[\r\n]+/g, "");
+  return normalizeNodeLabel(value);
 }
 
 function CanvasNodeComponent({
@@ -190,7 +191,7 @@ function CanvasNodeComponent({
 
   const [isEditing, setIsEditing] = useState(false);
   const [editLabel, setEditLabel] = useState(label);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const skipCommitRef = useRef(false);
 
   const minSize = MIN_SHAPE_SIZES[shape];
@@ -220,7 +221,7 @@ function CanvasNodeComponent({
       setIsEditing(false);
       return;
     }
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       commitLabel();
     }
@@ -286,15 +287,16 @@ function CanvasNodeComponent({
 
       {isEditing ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <input
+          <textarea
             ref={inputRef}
             value={editLabel}
+            rows={Math.min(6, Math.max(1, editLabel.split("\n").length))}
             onChange={(e) => setEditLabel(sanitizeNodeLabel(e.target.value))}
             onBlur={commitLabel}
             onKeyDown={handleKeyDown}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
-            className="nodrag nopan nowheel max-w-full bg-transparent px-3 py-1.5 text-center text-sm font-medium outline-none"
+            className="nodrag nopan nowheel max-h-full max-w-full resize-none bg-transparent px-3 py-1.5 text-center text-sm leading-snug font-medium whitespace-pre-wrap outline-none"
             style={{
               color: pair.text,
               caretColor: pair.text,

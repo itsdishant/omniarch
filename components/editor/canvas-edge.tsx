@@ -10,13 +10,14 @@ import {
 
 import type { CanvasEdge } from "@/types/canvas";
 import { DEFAULT_EDGE_COLOR, DEFAULT_EDGE_STROKE_WIDTH } from "@/types/canvas";
+import { normalizeEdgeLabel } from "@/lib/visible-text";
 
 export const EdgeActionsContext = createContext<{
   onLabelChange: (edgeId: string, label: string) => void;
 } | null>(null);
 
 function sanitizeEdgeLabel(value: string) {
-  return value.replace(/[\r\n]+/g, "");
+  return normalizeEdgeLabel(value);
 }
 
 export function CanvasEdgeComponent({

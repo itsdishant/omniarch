@@ -40,7 +40,7 @@ test.describe("Canvas - Node Operations", () => {
     await firstNode.dblclick();
 
     // Input should appear
-    const labelInput = firstNode.locator("input");
+    const labelInput = firstNode.getByRole("textbox");
     await expect(labelInput).toBeVisible();
     await labelInput.fill("Custom Microservice Node");
     await labelInput.press("Enter");

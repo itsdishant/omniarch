@@ -2,6 +2,7 @@ import { LiveMap, LiveObject, type JsonObject } from "@liveblocks/core";
 import type { LiveblocksEdge, LiveblocksNode } from "@liveblocks/react-flow";
 
 import { getLiveblocksClient } from "@/lib/liveblocks";
+import { normalizeEdgeLabel, normalizeNodeLabel } from "@/lib/visible-text";
 import {
   DEFAULT_EDGE_COLOR,
   DEFAULT_EDGE_STROKE_WIDTH,
@@ -129,7 +130,7 @@ function convertPlanAction(
         shape: asCanvasShape(action.shape),
         x: action.x,
         y: action.y,
-        label: action.label?.trim() || "Component",
+        label: normalizeNodeLabel(action.label ?? "").trim() || "Component",
         color: action.color ?? undefined,
         width: action.width ?? undefined,
         height: action.height ?? undefined,
@@ -205,7 +206,7 @@ export function sanitizeDesignActions(actions: DesignAction[]): DesignAction[] {
         shape,
         x: snap(action.x),
         y: snap(action.y),
-        label: action.label.trim() || "Component",
+        label: normalizeNodeLabel(action.label).trim() || "Component",
         color,
         width: size ?? width,
         height: size ?? height,
@@ -227,7 +228,10 @@ export function sanitizeDesignActions(actions: DesignAction[]): DesignAction[] {
     if (action.type === "update_node_data") {
       return {
         ...action,
-        label: action.label?.trim(),
+        label:
+          action.label != null
+            ? normalizeNodeLabel(action.label).trim()
+            : undefined,
         color:
           action.color && isAllowedColor(action.color)
             ? action.color
@@ -236,6 +240,14 @@ export function sanitizeDesignActions(actions: DesignAction[]): DesignAction[] {
               : undefined,
         shape:
           action.shape && SHAPES.has(action.shape) ? action.shape : undefined,
+      };
+    }
+
+    if (action.type === "add_edge") {
+      return {
+        ...action,
+        label:
+          action.label != null ? normalizeEdgeLabel(action.label) : undefined,
       };
     }
 
@@ -345,8 +357,7 @@ function applyAction(flow: FlowMaps, action: DesignAction) {
       let width = action.width;
       let height = action.height;
       const data = node.get("data") as
-        | { get?: (key: string) => unknown; shape?: CanvasShape }
-        | undefined;
+        { get?: (key: string) => unknown; shape?: CanvasShape } | undefined;
       const shape =
         data && typeof data.get === "function"
           ? data.get("shape")
@@ -459,12 +470,11 @@ export async function readCanvasGraph(roomId: string): Promise<{
     if (typeof node.id !== "string") return [];
     const position = node.position as { x?: number; y?: number } | undefined;
     const data = node.data as
-      | { label?: string; shape?: string; color?: string }
-      | undefined;
+      { label?: string; shape?: string; color?: string } | undefined;
     return [
       {
         id: node.id,
-        label: data?.label ?? "",
+        label: normalizeNodeLabel(data?.label ?? ""),
         shape: data?.shape ?? "rectangle",
         color: data?.color ?? DEFAULT_NODE_COLOR,
         x: typeof position?.x === "number" ? position.x : 0,
@@ -489,7 +499,10 @@ export async function readCanvasGraph(roomId: string): Promise<{
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        label: data?.label,
+        label:
+          typeof data?.label === "string"
+            ? normalizeEdgeLabel(data.label)
+            : data?.label,
       },
     ];
   });

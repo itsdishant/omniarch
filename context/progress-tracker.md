@@ -115,7 +115,7 @@ change.
 - Implemented `context/feature-specs/14-node-editing.md`. Resize + inline labels in `components/editor/canvas-wrapper.tsx`:
   - React Flow `NodeResizer` (min sizes, circle keeps aspect) so Liveblocks `dimensions` changes include `setAttributes`
   - Dropped nodes store `width`/`height` on the node, not only `style`
-  - Centered single-line label input (no Shift+Enter newlines); Escape cancels
+  - Centered label editor; Escape cancels
   - `npm run build` and `npm run lint` pass.
 - Reviewed and fixed editor canvas chrome + shape drag-and-drop (see findings below). Restored `.canvas-dots`. Overlay sidebars on desktop and mobile. `npm run lint` and `npm run build` pass.
 - Applied Liveblocks best practices: `@liveblocks/react/suspense`, `react-error-boundary`, React Flow `Cursors` from session userInfo, `getOrCreateRoom` with private `defaultAccesses`, `{ error: "forbidden" }` auth responses, `useErrorListener` / `useLostConnectionListener`, `preventUnsavedChanges`, `throttle={16}`, ESLint `useMutation` deps. `npm run lint` and `npm run build` pass.
