@@ -1,6 +1,6 @@
 /**
- * Convert JSON/AI escaped newlines into real line breaks without treating
- * Windows-style paths like `C:\new-service` as serialization damage.
+ * Convert JSON/AI escaped newlines into real line breaks.
+ * Drive-letter paths (`C:\new-service`) and `\root`-style path segments stay intact.
  */
 function isDriveLetterPrefix(value: string, backslashIndex: number) {
   return (
@@ -29,7 +29,7 @@ export function decodeSerializedNewlines(value: string): string {
 
     const next = value[i + 1];
     const afterEscape = value[i + 2];
-    const looksLikeWordContinuation =
+    const looksLikePathSegment =
       typeof afterEscape === "string" && /[a-z]/.test(afterEscape);
 
     if (next === "r" && value[i + 2] === "\\" && value[i + 3] === "n") {
@@ -37,12 +37,12 @@ export function decodeSerializedNewlines(value: string): string {
       i += 3;
       continue;
     }
-    if (next === "n" && !looksLikeWordContinuation) {
+    if (next === "n") {
       result += "\n";
       i += 1;
       continue;
     }
-    if (next === "r" && !looksLikeWordContinuation) {
+    if (next === "r" && !looksLikePathSegment) {
       result += "\n";
       i += 1;
       continue;

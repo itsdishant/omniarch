@@ -14,7 +14,10 @@ test.describe("Canvas label text normalization", () => {
     expect(decodeSerializedNewlines("Auth\\nService")).toBe("Auth\nService");
     expect(decodeSerializedNewlines("Auth\\r\\nService")).toBe("Auth\nService");
     expect(normalizeNodeLabel("Orders\\nAPI")).toBe("Orders\nAPI");
-    expect(decodeSerializedNewlines("foo\\nbar")).toBe("foo\\nbar");
+    expect(decodeSerializedNewlines("foo\\nbar")).toBe("foo\nbar");
+    expect(decodeSerializedNewlines("gateway\\nroutes requests")).toBe(
+      "gateway\nroutes requests",
+    );
   });
 
   test("preserves literal backslashes in Windows-style paths", () => {
@@ -39,6 +42,9 @@ test.describe("Canvas label text normalization", () => {
     expect(displayNodeLabel("   ", "Pill")).toBe("Pill");
     expect(displayNodeLabel("Auth\\nService", "Rectangle")).toBe(
       "Auth\nService",
+    );
+    expect(displayNodeLabel("gateway\\nroutes requests", "Rectangle")).toBe(
+      "gateway\nroutes requests",
     );
   });
 
