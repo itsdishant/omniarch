@@ -73,6 +73,8 @@
 
 - Long-running generation belongs in `trigger/`, not route handlers.
 - Design generation uses OpenRouter through `@openrouter/ai-sdk-provider` (`OPENROUTER_API_KEY`). Always build the model via `aiModel()` from `lib/ai-model.ts`; never read the API key or construct a provider inside a task.
+- `aiModel()` guards its inputs: a missing key or blank model id throws `AbortTaskRunError` rather than reaching the provider. `AI_MODEL` falls back to the bundled default when unset, empty, or whitespace-only.
+- Environment selection goes through `loadEnv()` in `lib/env-file.ts` for code outside the Next server (Prisma CLI). Under `NODE_ENV=production` it must never fall back to `.env.local`, or a production migration could run against the development database. Playwright's global setup/teardown intentionally read `.env.local` to keep E2E on development credentials.
 - Canvas mutations from the design agent use `generateText` tools in `lib/design-canvas-tools.ts`, then Liveblocks `mutateStorage` on `flow`. Do not use `Output.object()` or a second LLM provider.
 - Shared AI status uses Liveblocks feed `ai-status-feed`. Ephemeral AI presence uses `setPresence` with user id `omniarch-ai`.
 - Architect chat history uses Liveblocks feed `ai-chat`. Subscribe only after the room is connected (`AiChatReady`). UI clocks are 12-hour. Local Trigger.dev runs require `npm run dev:trigger` in addition to `npm run dev`.

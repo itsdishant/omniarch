@@ -46,11 +46,29 @@ describe("ai-model - model resolution", () => {
     }
   });
 
-  test("an empty AI_MODEL does not silently become the default", async () => {
-    setEnv({ AI_MODEL: "" });
+  test("an empty AI_MODEL falls back instead of yielding a blank model id", async () => {
+    // `??` alone would keep "" and hand OpenRouter an empty model id, failing
+    // every generation task with a confusing provider error.
+    for (const value of ["", "   ", "\t\n"]) {
+      setEnv({ AI_MODEL: value });
+      try {
+        const { AI_MODEL, FALLBACK_AI_MODEL } = await loadModule();
+        assert.equal(
+          AI_MODEL,
+          FALLBACK_AI_MODEL,
+          `AI_MODEL=${JSON.stringify(value)} should fall back`,
+        );
+      } finally {
+        restoreEnv();
+      }
+    }
+  });
+
+  test("surrounding whitespace is trimmed from AI_MODEL", async () => {
+    setEnv({ AI_MODEL: "  vendor/model:free  " });
     try {
       const { AI_MODEL } = await loadModule();
-      assert.equal(AI_MODEL, "");
+      assert.equal(AI_MODEL, "vendor/model:free");
     } finally {
       restoreEnv();
     }
@@ -101,6 +119,23 @@ describe("ai-model - aiModel()", () => {
           return true;
         },
       );
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  test("never passes a blank model id to the provider", async () => {
+    setEnv({ OPENROUTER_API_KEY: "sk-or-v1-test" });
+    try {
+      const { aiModel, AI_MODEL } = await loadModule();
+
+      for (const blank of ["", "   "]) {
+        assert.equal(
+          aiModel(blank).modelId,
+          AI_MODEL,
+          `a blank override (${JSON.stringify(blank)}) should fall back`,
+        );
+      }
     } finally {
       restoreEnv();
     }

@@ -61,10 +61,34 @@ describe("env-file - envFilePath()", () => {
       "production",
       async () => {
         const { envFilePath } = await loadModule();
-        assert.deepEqual(envFilePath(), [
-          ".env.production.local",
-          ".env.local",
-        ]);
+        assert.deepEqual(envFilePath(), [".env.production.local"]);
+      },
+    );
+  });
+
+  test("never falls back to .env.local under NODE_ENV=production", async () => {
+    // Guards against production runs silently inheriting dev credentials,
+    // such as running migrations against the development database.
+    await inEnvDir({ ".env.local": SHARED_LOCAL }, "production", async () => {
+      const { envFilePath } = await loadModule();
+      assert.deepEqual(envFilePath(), []);
+    });
+  });
+
+  test("falls back to .env under NODE_ENV=production", async () => {
+    await inEnvDir({ ".env": SHARED_PROD }, "production", async () => {
+      const { envFilePath } = await loadModule();
+      assert.deepEqual(envFilePath(), [".env"]);
+    });
+  });
+
+  test("prefers .env.local over .env under NODE_ENV=development", async () => {
+    await inEnvDir(
+      { ".env.local": SHARED_LOCAL, ".env": SHARED_PROD },
+      "development",
+      async () => {
+        const { envFilePath } = await loadModule();
+        assert.deepEqual(envFilePath(), [".env.local", ".env"]);
       },
     );
   });
@@ -87,7 +111,7 @@ describe("env-file - envFilePath()", () => {
   });
 
   test("omits the env-specific file when it does not exist", async () => {
-    await inEnvDir({ ".env.local": SHARED_LOCAL }, "production", async () => {
+    await inEnvDir({ ".env.local": SHARED_LOCAL }, "development", async () => {
       const { envFilePath } = await loadModule();
       assert.deepEqual(envFilePath(), [".env.local"]);
     });
@@ -136,6 +160,19 @@ describe("env-file - loadEnv()", () => {
         delete process.env.OMNIARCH_PROBE;
       },
     );
+  });
+
+  test("leaves variables unset in production rather than using dev values", async () => {
+    await inEnvDir({ ".env.local": SHARED_LOCAL }, "production", async () => {
+      delete process.env.OMNIARCH_PROBE;
+      const { loadEnv } = await loadModule();
+      loadEnv();
+      assert.equal(
+        process.env.OMNIARCH_PROBE,
+        undefined,
+        "production must not pick up development credentials",
+      );
+    });
   });
 
   test("does not override a value already present in process.env", async () => {

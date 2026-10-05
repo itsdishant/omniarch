@@ -127,10 +127,20 @@ This project keeps two env files in the root, both gitignored:
 - `.env.local` — development (used by `next dev` and `trigger.dev dev`)
 - `.env.production.local` — production (used when `NODE_ENV=production`)
 
-Next.js picks the file matching `NODE_ENV` automatically. Code that runs outside
-the Next server (Prisma CLI, Playwright) calls `loadEnv()` from `lib/env-file.ts`,
-which selects the same file. Both files should stay identical apart from
-environment-specific secrets.
+Next.js picks the file matching `NODE_ENV` automatically. The Prisma CLI also
+calls `loadEnv()` from `lib/env-file.ts`, so `prisma generate` and migrations
+resolve the same file from their own process. Under `NODE_ENV=production` that
+helper deliberately does **not** fall back to `.env.local`, so a production run
+missing its own config fails loudly instead of inheriting development
+credentials.
+
+The Playwright global setup and teardown are the exception: they read
+`.env.local` directly, so the E2E suite always runs against development
+credentials even when pointed at another deployment.
+
+Keep both files identical apart from environment-specific keys
+(`TRIGGER_SECRET_KEY`, `LIVEBLOCKS_SECRET_KEY`, and `DATABASE_URL` when the
+environments use separate databases).
 
 Create them in the root directory:
 
@@ -365,7 +375,8 @@ omniarch/
 
 ## 🛡️ <a name="security-and-reliability">Security & Reliability</a>
 
-- **Environment files**: `.env.local` for development and `.env.production.local` for production. Next.js selects the one matching `NODE_ENV`; `loadEnv()` in `lib/env-file.ts` does the same for Prisma CLI and Playwright, which run outside the Next server.
+- **Environment files**: `.env.local` for development and `.env.production.local` for production. Next.js selects the one matching `NODE_ENV`, and `loadEnv()` in `lib/env-file.ts` does the same for the Prisma CLI, which runs outside the Next server. Under `NODE_ENV=production` the chain excludes `.env.local`, so development credentials (notably `DATABASE_URL`) can never leak into a production migration. The Playwright harness is a deliberate exception and reads `.env.local` directly, keeping E2E on development credentials.
+- **Env contract**: `tests/unit/required-env-keys.ts` holds the committed list of required keys, the keys allowed to differ per environment, and the secrets that must not be shared. The parity suite checks required-key coverage even when the gitignored env files are absent.
 
 - **Bounded LLM Context Limits**: Canvas graph serialization enforces strict safety caps (maximum 200 nodes, 300 edges, 200-character labels, and 100k total prompt characters) to prevent context overflows and token cost spikes.
 - **Race Condition Prevention**: Synchronous execution refs (`startingRef`) prevent duplicate generation runs from simultaneous user triggers.

@@ -2,16 +2,27 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 
+import {
+  ENVIRONMENT_SPECIFIC_KEYS,
+  REQUIRED_ENV_KEYS,
+  SECRET_KEYS,
+} from "./required-env-keys";
+
 /**
- * Guards the dev/prod env split. `.env*` is gitignored, so these files exist
- * only locally; when absent the suite skips rather than failing.
+ * Guards the dev/prod env split.
+ *
+ * Required-key coverage is checked against a committed, non-secret list, so it
+ * still runs on a fresh checkout. The value-level comparisons (secrets must
+ * differ, only environment-specific keys may drift) need the real gitignored
+ * files and skip when those are absent.
  */
 
 const DEV_ENV = ".env.local";
 const PROD_ENV = ".env.production.local";
 
-/** Keys that are expected to differ between the dev and prod env files. */
-const EXPECTED_DIFFS = new Set(["TRIGGER_SECRET_KEY", "LIVEBLOCKS_SECRET_KEY"]);
+const DEV_PRESENT = existsSync(DEV_ENV);
+const PROD_PRESENT = existsSync(PROD_ENV);
+const BOTH_PRESENT = DEV_PRESENT && PROD_PRESENT;
 
 function parseEnvFile(path: string): Map<string, string> {
   const entries = new Map<string, string>();
@@ -34,16 +45,77 @@ function parseEnvFile(path: string): Map<string, string> {
   return entries;
 }
 
-describe("env parity - .env.local vs .env.production.local", () => {
-  const bothPresent = existsSync(DEV_ENV) && existsSync(PROD_ENV);
+const ENV_FILES: Array<[label: string, path: string, present: boolean]> = [
+  [DEV_ENV, DEV_ENV, DEV_PRESENT],
+  [PROD_ENV, PROD_ENV, PROD_PRESENT],
+];
 
-  test("dev and prod env files both exist", { skip: !bothPresent }, () => {
-    assert.ok(bothPresent, "both env files should exist locally");
+describe("env parity - required keys", () => {
+  for (const [label, path, present] of ENV_FILES) {
+    test(
+      `${label} defines every required key (skipped when the file is gitignored and absent)`,
+      { skip: present ? false : `${path} not present` },
+      () => {
+        const entries = parseEnvFile(path);
+        const missing = REQUIRED_ENV_KEYS.filter((key) => {
+          const value = entries.get(key);
+          return value === undefined || value === "";
+        });
+
+        assert.deepEqual(missing, [], `${path} is missing keys: ${missing}`);
+      },
+    );
+  }
+
+  test("the required-key list is non-empty and has no duplicates", () => {
+    assert.ok(REQUIRED_ENV_KEYS.length > 0);
+    assert.equal(
+      new Set(REQUIRED_ENV_KEYS).size,
+      REQUIRED_ENV_KEYS.length,
+      "required key list contains duplicates",
+    );
   });
 
+  test("the required-key list covers every key the codebase reads", () => {
+    // Guards against a new process.env read landing without a matching entry.
+    const sourceFiles = [
+      "lib/ai-model.ts",
+      "lib/env-file.ts",
+      "lib/prisma.ts",
+      "lib/liveblocks.ts",
+      "prisma.config.ts",
+    ];
+
+    const referenced = new Set<string>();
+    for (const file of sourceFiles) {
+      const source = readFileSync(
+        new URL(`../../${file}`, import.meta.url),
+        "utf8",
+      );
+      for (const match of source.matchAll(/process\.env\.([A-Z_0-9]+)/g)) {
+        referenced.add(match[1]);
+      }
+    }
+
+    // NODE_ENV is set by the runtime, not read from a file.
+    referenced.delete("NODE_ENV");
+
+    const unlisted = [...referenced].filter(
+      (key) => !REQUIRED_ENV_KEYS.includes(key as never),
+    );
+
+    assert.deepEqual(
+      unlisted,
+      [],
+      `these keys are read in code but missing from REQUIRED_ENV_KEYS: ${unlisted}`,
+    );
+  });
+});
+
+describe("env parity - dev vs prod values", () => {
   test(
     "prod defines every key the dev file defines",
-    { skip: !bothPresent },
+    { skip: !BOTH_PRESENT },
     () => {
       const dev = parseEnvFile(DEV_ENV);
       const prod = parseEnvFile(PROD_ENV);
@@ -54,8 +126,8 @@ describe("env parity - .env.local vs .env.production.local", () => {
   );
 
   test(
-    "only the expected keys differ between dev and prod",
-    { skip: !bothPresent },
+    "only environment-specific keys differ between dev and prod",
+    { skip: !BOTH_PRESENT },
     () => {
       const dev = parseEnvFile(DEV_ENV);
       const prod = parseEnvFile(PROD_ENV);
@@ -64,7 +136,10 @@ describe("env parity - .env.local vs .env.production.local", () => {
         .filter(([key, value]) => prod.get(key) !== value)
         .map(([key]) => key);
 
-      const unexpected = differing.filter((key) => !EXPECTED_DIFFS.has(key));
+      const unexpected = differing.filter(
+        (key) => !ENVIRONMENT_SPECIFIC_KEYS.includes(key as never),
+      );
+
       assert.deepEqual(
         unexpected,
         [],
@@ -74,31 +149,57 @@ describe("env parity - .env.local vs .env.production.local", () => {
   );
 
   test(
-    "dev and prod use different Trigger secret keys",
-    { skip: !bothPresent },
+    "per-environment secrets are not shared",
+    { skip: !BOTH_PRESENT },
     () => {
       const dev = parseEnvFile(DEV_ENV);
       const prod = parseEnvFile(PROD_ENV);
 
-      const devKey = dev.get("TRIGGER_SECRET_KEY");
-      const prodKey = prod.get("TRIGGER_SECRET_KEY");
+      const shared: string[] = [];
 
-      assert.ok(devKey && prodKey, "both files must define TRIGGER_SECRET_KEY");
-      assert.notEqual(
-        devKey,
-        prodKey,
-        "prod must not reuse the dev secret key",
+      for (const key of SECRET_KEYS) {
+        const devValue = dev.get(key);
+        const prodValue = prod.get(key);
+
+        assert.ok(devValue && prodValue, `both files must define ${key}`);
+
+        if (devValue === prodValue) {
+          shared.push(key);
+        }
+      }
+
+      assert.deepEqual(
+        shared,
+        [],
+        `${shared.join(", ")} identical in dev and prod. Give production its own ` +
+          `secret for each; do not copy the dev value across.`,
       );
-      assert.match(devKey!, /^tr_dev_/, "dev key should be a tr_dev_ key");
-      assert.match(prodKey!, /^tr_prod_/, "prod key should be a tr_prod_ key");
     },
   );
 
-  test("AI_MODEL is present in both files", { skip: !bothPresent }, () => {
-    const dev = parseEnvFile(DEV_ENV);
-    const prod = parseEnvFile(PROD_ENV);
+  test(
+    "prod uses a tr_prod_ Trigger key and dev a tr_dev_ one",
+    { skip: !BOTH_PRESENT },
+    () => {
+      const dev = parseEnvFile(DEV_ENV).get("TRIGGER_SECRET_KEY");
+      const prod = parseEnvFile(PROD_ENV).get("TRIGGER_SECRET_KEY");
 
-    assert.ok(dev.get("AI_MODEL"), "dev env must define AI_MODEL");
-    assert.ok(prod.get("AI_MODEL"), "prod env must define AI_MODEL");
-  });
+      assert.ok(dev && prod, "both files must define TRIGGER_SECRET_KEY");
+      assert.match(dev, /^tr_dev_/, "dev key should be a tr_dev_ key");
+      assert.match(prod, /^tr_prod_/, "prod key should be a tr_prod_ key");
+    },
+  );
+
+  test(
+    "DATABASE_URL may differ; it is not forced to match",
+    { skip: !BOTH_PRESENT },
+    () => {
+      // This test documents intent: DATABASE_URL is allowed to drift, so a
+      // failure elsewhere must never be "fixed" by making the URLs equal.
+      assert.ok(
+        ENVIRONMENT_SPECIFIC_KEYS.includes("DATABASE_URL" as never),
+        "DATABASE_URL must remain environment-specific",
+      );
+    },
+  );
 });
