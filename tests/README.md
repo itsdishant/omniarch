@@ -17,7 +17,8 @@ The test architecture is designed around four key pillars:
    - Automatically maintains the test user pool to avoid hitting Clerk's free-tier development quotas.
 
 3. **Isolated Test Execution**:
-   - Tests execute against a real running Next.js application server (`http://localhost:3000`) and live database/mocked backend interfaces.
+   - E2E tests execute against a real running Next.js application server (`http://localhost:3000`) and live database/mocked backend interfaces.
+   - Unit tests under `tests/unit/` run in-process on Node's test runner, with no server or credentials.
    - Browser permissions (e.g. `clipboard-read`, `clipboard-write`) and clean states are configured per fixture.
 
 4. **Multi-Layer Validation**:
@@ -36,6 +37,11 @@ tests/
 ├── global.teardown.ts                         # Global teardown: Post-run test project database cleanup
 ├── helpers/
 │   └── test-auth.ts                           # Shared authentication & workspace creation test helpers
+├── unit/                                     # Node:test unit suites (no browser or server required)
+│   ├── ai-model.test.ts                       # AI_MODEL env resolution, fallback, and missing-key guard
+│   ├── ai-tasks.test.ts                       # Trigger tasks build models via aiModel(); no direct provider/key use
+│   ├── env-file.test.ts                       # NODE_ENV-based env file selection and loadEnv() precedence
+│   └── env-parity.test.ts                     # .env.local vs .env.production.local key parity and secret separation
 ├── auth/                                      # Authentication flows and Clerk form interactions
 │   ├── sign-in.spec.ts                        # Sign-in form, OmniArch branding, dynamic copyright, SVG favicons, login
 │   ├── sign-up.spec.ts                        # Sign-up form, OmniArch branding, dynamic copyright, navigation
@@ -91,11 +97,43 @@ The test suite manages authentication, isolation, and environmental flexibility 
 
 ## 🚀 Running Tests
 
-### Run All Tests
+### Run E2E Tests
 
 ```bash
 npx playwright test
 ```
+
+### Run Unit Tests (fast, no server)
+
+Unit suites run on Node's built-in test runner via `tsx`, and need no browser,
+running server, or credentials:
+
+```bash
+npm run test:unit
+
+# Single file
+node --import tsx --test "tests/unit/ai-model.test.ts"
+```
+
+Unit tests are ignored by Playwright (`testIgnore: "**/unit/**"`). They cover
+module-level logic that E2E cannot reach directly, such as env-driven model
+resolution and NODE_ENV-based env file selection. Run both with `npm test`.
+
+### Unit Tests Only
+
+Unit suites run on Node's built-in test runner via `tsx`, and need no browser,
+running server, or credentials:
+
+```bash
+npm run test:unit
+
+# Single file
+node --import tsx --test "tests/unit/ai-model.test.ts"
+```
+
+Unit tests are ignored by Playwright (`testIgnore: "**/unit/**"`). They cover
+module-level logic that E2E cannot reach directly, such as env-driven model
+resolution and NODE_ENV-based env file selection.
 
 ### Run a Specific Domain / Directory
 
@@ -151,4 +189,7 @@ When adding new test files to this repository, adhere to the following conventio
 3. **Auth Helpers**: For any test requiring an authenticated user, import `createAndSignInTestUser` and `createTestProject` from `../helpers/test-auth`.
 4. **Resilient Locators**: Prefer user-facing semantic locators (`page.getByRole`, `page.getByLabel`, `page.getByText`) over brittle CSS classes or XPath selectors.
 5. **Exact Match when Necessary**: When text might match both headers and descriptions, use exact matching (e.g. `page.getByText("Workspace", { exact: true })`).
-6. **Canvas Suspense Awareness**: When testing canvas components, always wait for the canvas toolbar (`page.getByRole("toolbar", { name: /shape tools/i })`) to be visible to ensure Liveblocks client-side suspense has completed rendering.
+6. **Unit vs E2E Split**: Put module-level logic (env resolution, model config, pure helpers) in `tests/unit/*.test.ts` using `node:test` + `node:assert`. Reserve Playwright for browser and HTTP contract behavior. Never import Playwright's `expect` inside `tests/unit/`.
+7. **Fresh Module State for Env-Dependent Code**: `lib/ai-model.ts` and `lib/env-file.ts` read `process.env` at import time. Use the cache-busting dynamic import (`import(url + "?t=" + Math.random())`) so each case re-evaluates the module, and restore `process.env` in a `finally` block.
+8. **Isolated Filesystem for Env Selection Tests**: `envFilePath()` depends on which files exist in the cwd. Run each case in a fresh `mkdtemp` directory via the `inEnvDir` helper so cases cannot leak into each other.
+9. **Canvas Suspense Awareness**: When testing canvas components, always wait for the canvas toolbar (`page.getByRole("toolbar", { name: /shape tools/i })`) to be visible to ensure Liveblocks client-side suspense has completed rendering.

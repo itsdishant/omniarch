@@ -1,9 +1,9 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { AbortTaskRunError, logger, task, tasks } from "@trigger.dev/sdk";
 import { generateText } from "ai";
 import { put } from "@vercel/blob";
 import { z } from "zod";
 
+import { aiModel } from "@/lib/ai-model";
 import { readCanvasGraph } from "@/lib/canvas-flow";
 import { publishAiStatus } from "@/lib/ai-status";
 import { ensureLiveblocksRoom } from "@/lib/liveblocks";
@@ -59,21 +59,6 @@ function truncatePrompt(prompt: string) {
   return prompt.slice(0, MAX_PROMPT_CHARS) + "\n\n[TRUNCATED]";
 }
 
-function googleClient() {
-  const apiKey =
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
-    process.env.GEMINI_API_KEY ??
-    process.env.GOOGLE_API_KEY;
-
-  if (!apiKey) {
-    throw new AbortTaskRunError(
-      "Missing Gemini API key (GOOGLE_GENERATIVE_AI_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY)",
-    );
-  }
-
-  return createGoogleGenerativeAI({ apiKey });
-}
-
 export const generateSpecTask = task({
   id: "generate-spec",
   retry: { maxAttempts: 1 },
@@ -97,16 +82,8 @@ export const generateSpecTask = task({
 
       const startedAt = Date.now();
       const result = await generateText({
-        model: googleClient()("gemini-3.6-flash"),
+        model: aiModel(),
         reasoning: "none",
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              thinkingLevel: "minimal",
-              includeThoughts: false,
-            },
-          },
-        },
         system: `You are OmniArch, a technical specification writer.
 Generate a comprehensive Markdown technical specification from the provided canvas graph and chat history.
 

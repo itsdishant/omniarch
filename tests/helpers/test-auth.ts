@@ -11,6 +11,8 @@ export const DEFAULT_E2E_PASSWORD = "OmniArch_E2ERunner_#9xZ$2026!";
 
 export async function createAndSignInTestUser(
   page: Page,
+  // Accepted for call-site readability (e.g. `{ prefix: "ai.chat" }`); the
+  // shared runner account is reused, so the value is intentionally unused.
   _options: { prefix?: string } = {},
 ): Promise<TestUserCredentials> {
   await setupClerkTestingToken({ page });

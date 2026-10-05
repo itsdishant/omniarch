@@ -1,7 +1,7 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk";
 import { generateText, isStepCount } from "ai";
 
+import { aiModel } from "@/lib/ai-model";
 import { clearAiPresence, updateAiPresence } from "@/lib/ai-presence";
 import { publishAiStatus } from "@/lib/ai-status";
 import {
@@ -11,21 +11,6 @@ import {
 } from "@/lib/canvas-flow";
 import { createDesignCanvasTools } from "@/lib/design-canvas-tools";
 import { ensureLiveblocksRoom } from "@/lib/liveblocks";
-
-function googleClient() {
-  const apiKey =
-    process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
-    process.env.GEMINI_API_KEY ??
-    process.env.GOOGLE_API_KEY;
-
-  if (!apiKey) {
-    throw new AbortTaskRunError(
-      "Missing Gemini API key (GOOGLE_GENERATIVE_AI_API_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY)",
-    );
-  }
-
-  return createGoogleGenerativeAI({ apiKey });
-}
 
 export const designAgentTask = task({
   id: "design-agent",
@@ -52,16 +37,8 @@ export const designAgentTask = task({
 
       const startedAt = Date.now();
       const result = await generateText({
-        model: googleClient()("gemini-3.6-flash"),
+        model: aiModel(),
         reasoning: "none",
-        providerOptions: {
-          google: {
-            thinkingConfig: {
-              thinkingLevel: "minimal",
-              includeThoughts: false,
-            },
-          },
-        },
         tools,
         stopWhen: isStepCount(12),
         system: `You are OmniArch, an architecture diagram assistant.
@@ -88,7 +65,7 @@ Rules:
 
       const actionCount = getAppliedCount();
       if (actionCount === 0) {
-        throw new Error("Gemini did not call any canvas tools");
+        throw new Error("The model did not call any canvas tools");
       }
 
       await publishAiStatus(roomId, "Design complete");

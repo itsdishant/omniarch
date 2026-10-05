@@ -17,36 +17,37 @@ export function useDesignAgentRun(options: {
   const [handle, setHandle] = useState<DesignRunHandle | null>(null);
   const finishingRef = useRef(false);
   const sendRef = useRef(options.sendAssistantMessage);
-  sendRef.current = options.sendAssistantMessage;
 
-  const { run, error } = useRealtimeRun<typeof designAgentTask>(
-    handle?.runId,
-    {
-      accessToken: handle?.publicToken,
-      enabled: Boolean(handle?.runId && handle?.publicToken),
-      skipColumns: ["payload"],
-      onComplete: (completed, completeError) => {
-        if (finishingRef.current) {
-          return;
-        }
-        finishingRef.current = true;
+  // Keep the latest callback without writing to the ref during render.
+  useEffect(() => {
+    sendRef.current = options.sendAssistantMessage;
+  }, [options.sendAssistantMessage]);
 
-        const summary =
-          typeof completed.output?.summary === "string"
-            ? completed.output.summary.trim()
-            : "";
-        const content = completeError
-          ? completeError.message
-          : completed.status === "COMPLETED"
-            ? summary || "Design complete"
-            : completed.error?.message || "Design generation failed";
+  const { run, error } = useRealtimeRun<typeof designAgentTask>(handle?.runId, {
+    accessToken: handle?.publicToken,
+    enabled: Boolean(handle?.runId && handle?.publicToken),
+    skipColumns: ["payload"],
+    onComplete: (completed, completeError) => {
+      if (finishingRef.current) {
+        return;
+      }
+      finishingRef.current = true;
 
-        void sendRef.current(content).finally(() => {
-          setHandle(null);
-        });
-      },
+      const summary =
+        typeof completed.output?.summary === "string"
+          ? completed.output.summary.trim()
+          : "";
+      const content = completeError
+        ? completeError.message
+        : completed.status === "COMPLETED"
+          ? summary || "Design complete"
+          : completed.error?.message || "Design generation failed";
+
+      void sendRef.current(content).finally(() => {
+        setHandle(null);
+      });
     },
-  );
+  });
 
   useEffect(() => {
     if (!error || !handle || finishingRef.current) {
@@ -69,9 +70,11 @@ export function useDesignAgentRun(options: {
       }),
     });
 
-    const body = (await response.json().catch(() => null)) as
-      | { runId?: string; publicToken?: string; error?: string }
-      | null;
+    const body = (await response.json().catch(() => null)) as {
+      runId?: string;
+      publicToken?: string;
+      error?: string;
+    } | null;
 
     if (!response.ok || !body?.runId || !body.publicToken) {
       throw new Error(body?.error || "Couldn't start design generation");

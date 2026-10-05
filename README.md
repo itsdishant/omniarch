@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/-Liveblocks-000000?style=for-the-badge&logo=Liveblocks&logoColor=white" alt="Liveblocks" />
     <br />
     <img src="https://img.shields.io/badge/-React_Flow-FF0072?style=for-the-badge&logo=reactflow&logoColor=white" alt="React Flow" />
-    <img src="https://img.shields.io/badge/-Google_Gemini_3.6_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Google Gemini 3.6 Flash" />
+    <img src="https://img.shields.io/badge/-OpenRouter-6467F2?style=for-the-badge&logo=openrouter&logoColor=white" alt="OpenRouter (model via AI_MODEL env)" />
     <img src="https://img.shields.io/badge/-Trigger.dev_v4-0B0F19?style=for-the-badge" alt="Trigger.dev v4" />
     <img src="https://img.shields.io/badge/-Prisma_ORM-2D3748?style=for-the-badge&logo=Prisma&logoColor=white" alt="Prisma ORM" />
     <img src="https://img.shields.io/badge/-PostgreSQL-4169E1?style=for-the-badge&logo=PostgreSQL&logoColor=white" alt="PostgreSQL" />
@@ -48,7 +48,7 @@
 
 **OmniArch** is an intelligent, real-time collaborative system design workspace tailored for modern engineering teams. It transforms abstract architectural ideation into structured, production-ready system graphs and technical specifications.
 
-Instead of wrestling with static diagramming tools or fragmented whiteboards, engineers describe distributed systems in natural language. Powered by **Google Gemini 3.6 Flash** and durable **Trigger.dev** background workflows, the AI Architect dynamically creates, positions, styles, and links components on a synchronized canvas. Simultaneously, collaborators can interact live with real-time multi-user presence, cursors, custom architectural shapes, and starter blueprints powered by **Liveblocks** and **React Flow**.
+Instead of wrestling with static diagramming tools or fragmented whiteboards, engineers describe distributed systems in natural language. Powered by an **OpenRouter**-hosted model and durable **Trigger.dev** background workflows, the AI Architect dynamically creates, positions, styles, and links components on a synchronized canvas. Simultaneously, collaborators can interact live with real-time multi-user presence, cursors, custom architectural shapes, and starter blueprints powered by **Liveblocks** and **React Flow**.
 
 Once the architecture is finalized, OmniArch synthesizes the graph topology and team chat history into an enterprise-grade Markdown **Technical Specification document** (including data flows, component boundaries, failure modes, and infrastructure recommendations), safely persisted on **Vercel Blob** with in-app preview and protected downloads.
 
@@ -59,7 +59,7 @@ Once the architecture is finalized, OmniArch synthesizes the graph topology and 
 - **[Tailwind CSS v4](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)** — Modern design system customized with dark-mode CSS tokens, Radix UI primitives, Lucide icons, and responsive layouts.
 - **[Liveblocks](https://liveblocks.io/)** — Real-time collaboration infrastructure managing distributed state (CRDTs), live multi-user cursors, presence awareness, and broadcast status feeds.
 - **[React Flow (@xyflow/react)](https://reactflow.dev/)** — Interactive canvas engine customized with smooth step paths, midpoint edge labels, custom draggable architectural shapes, and interactive node toolbars.
-- **[Google Gemini 3.6 Flash](https://ai.google.dev/) (`@ai-sdk/google`)** — State-of-the-art multimodal LLM powering agentic graph tool execution (`addNode`, `moveNode`, `addEdge`, etc.) and structured technical specification synthesis.
+- Model id via the `AI_MODEL` env var (`.env.local` / `.env.production.local`), served by [`@openrouter/ai-sdk-provider`](https://openrouter.ai/) — powers agentic graph tool execution (`addNode`, `moveNode`, `addEdge`, etc.) and structured technical specification synthesis, swappable without a code change.
 - **[Trigger.dev v4](https://trigger.dev/)** — Resilient background task orchestration engine handling long-running AI design agent tasks, spec generation, and durable exponential-backoff blob cleanup.
 - **[Prisma ORM](https://www.prisma.io/) & [PostgreSQL](https://www.postgresql.org/)** — Multi-file database schema modeling projects, collaborator roles, task executions, and specification metadata with connection caching.
 - **[Clerk](https://clerk.com/)** — Enterprise-grade authentication and user management with dark theme styling, protected routes, and backend user enrichment.
@@ -99,7 +99,7 @@ Ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (v20.0.0 or higher)
 - [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
 - [PostgreSQL](https://www.postgresql.org/) database instance
-- Accounts with [Clerk](https://clerk.com/), [Liveblocks](https://liveblocks.io/), [Trigger.dev](https://trigger.dev/), [Vercel Blob](https://vercel.com/), and [Google AI Studio](https://aistudio.google.com/)
+- Accounts with [Clerk](https://clerk.com/), [Liveblocks](https://liveblocks.io/), [Trigger.dev](https://trigger.dev/), [Vercel Blob](https://vercel.com/), and [OpenRouter](https://openrouter.ai/)
 
 ---
 
@@ -122,7 +122,17 @@ npm install
 
 ### 3. Configure Environment Variables
 
-Create a `.env` (or `.env.local`) file in the root directory:
+This project keeps two env files in the root, both gitignored:
+
+- `.env.local` — development (used by `next dev` and `trigger.dev dev`)
+- `.env.production.local` — production (used when `NODE_ENV=production`)
+
+Next.js picks the file matching `NODE_ENV` automatically. Code that runs outside
+the Next server (Prisma CLI, Playwright) calls `loadEnv()` from `lib/env-file.ts`,
+which selects the same file. Both files should stay identical apart from
+environment-specific secrets.
+
+Create them in the root directory:
 
 ```env
 # Clerk Authentication
@@ -147,8 +157,10 @@ TRIGGER_PROJECT_REF=proj_...
 TRIGGER_SECRET_KEY=tr_dev_...
 TRIGGER_API_URL=https://api.trigger.dev
 
-# Google Gemini API
-GOOGLE_API_KEY=AIzaSy...
+# OpenRouter API
+OPENROUTER_API_KEY=sk-or-v1-...
+# Active model id (any OpenRouter model; :free tiers work)
+AI_MODEL=inclusionai/ling-3.0-flash-sante:free
 ```
 
 ---
@@ -239,7 +251,7 @@ flowchart LR
 
     subgraph Services["Background & AI Services"]
         Trigger["Trigger.dev Workers"]
-        Gemini["Google Gemini 3.6 Flash"]
+        LLM["OpenRouter LLM (AI_MODEL)"]
         Blob["Vercel Blob Storage"]
     end
 
@@ -258,10 +270,10 @@ flowchart LR
     Live --> Flow
 
     AI --> Trigger
-    Trigger --> Gemini
+    Trigger --> LLM
     Trigger --> Blob
-    Gemini --> Live
-    Gemini --> Blob
+    LLM --> Live
+    LLM --> Blob
 ```
 
 ### Flow Diagram
@@ -273,7 +285,7 @@ sequenceDiagram
     participant API as Next.js API
     participant DB as PostgreSQL / Prisma
     participant TD as Trigger.dev
-    participant GM as Gemini
+    participant GM as OpenRouter LLM
     participant LB as Liveblocks
     participant BL as Vercel Blob
 
@@ -322,7 +334,7 @@ omniarch/
 │   ├── ai/                     # AI Architect prompt & spec generation tests
 │   └── api/                    # Backend REST API contract tests
 ├── trigger/                    # Trigger.dev background task definitions
-│   ├── design-agent.ts         # Agentic graph builder via Gemini tool calls
+│   ├── design-agent.ts         # Agentic graph builder via model tool calls
 │   ├── generate-spec.ts        # Markdown technical specification generator
 │   └── cleanup-blobs.ts        # Durable exponential backoff blob cleanup task
 └── types/                      # TypeScript schemas & Zod definitions (Canvas, Specs, Tasks)
@@ -335,7 +347,7 @@ omniarch/
 1. User submits an architecture prompt in the AI Workspace sidebar.
 2. `POST /api/ai/design` validates project access, records a `TaskRun`, and triggers the `design-agent` task on Trigger.dev.
 3. The client subscribes to real-time execution via `@trigger.dev/react-hooks` with a scoped public token.
-4. Gemini 3.6 Flash evaluates the prompt, invokes atomic tools (`addNode`, `moveNode`, `addEdge`), and mutates the Liveblocks `flow` storage directly.
+4. The model evaluates the prompt, invokes atomic tools (`addNode`, `moveNode`, `addEdge`), and mutates the Liveblocks `flow` storage directly.
 5. Ephemeral AI cursor presence and status updates stream to all active room participants.
 
 #### 2. Technical Specification Generation Flow
@@ -343,7 +355,7 @@ omniarch/
 1. User clicks **Generate Spec** in the Specs tab.
 2. `POST /api/ai/spec` initiates the durable `generate-spec` background task.
 3. The worker queries the live canvas graph directly from Liveblocks storage and formats prompt context with token safety bounds.
-4. Gemini generates a structured, multi-section Markdown specification.
+4. The model generates a structured, multi-section Markdown specification.
 5. The generated file is uploaded to private Vercel Blob storage, metadata is recorded in Prisma `ProjectSpec`, and collaborators receive instant UI updates to preview or download.
 
 #### 3. Resilient Blob Lifecycle & Cleanup Flow
@@ -352,6 +364,8 @@ omniarch/
 2. The `cleanup-blobs` Trigger.dev task executes with exponential backoff (5 retries over 1 hour) to guarantee zero orphaned storage artifacts.
 
 ## 🛡️ <a name="security-and-reliability">Security & Reliability</a>
+
+- **Environment files**: `.env.local` for development and `.env.production.local` for production. Next.js selects the one matching `NODE_ENV`; `loadEnv()` in `lib/env-file.ts` does the same for Prisma CLI and Playwright, which run outside the Next server.
 
 - **Bounded LLM Context Limits**: Canvas graph serialization enforces strict safety caps (maximum 200 nodes, 300 edges, 200-character labels, and 100k total prompt characters) to prevent context overflows and token cost spikes.
 - **Race Condition Prevention**: Synchronous execution refs (`startingRef`) prevent duplicate generation runs from simultaneous user triggers.
