@@ -3,9 +3,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { describe, test } from "node:test";
 
 import {
+  CREDENTIAL_KEY_PATTERN,
   ENVIRONMENT_SPECIFIC_KEYS,
+  MUST_DIFFER_KEYS,
   REQUIRED_ENV_KEYS,
-  SECRET_KEYS,
+  SHARED_CONFIG_KEYS,
 } from "./required-env-keys";
 
 /**
@@ -74,6 +76,52 @@ describe("env parity - required keys", () => {
       REQUIRED_ENV_KEYS.length,
       "required key list contains duplicates",
     );
+  });
+
+  test("every required key is classified exactly once", () => {
+    const classified = [...ENVIRONMENT_SPECIFIC_KEYS, ...SHARED_CONFIG_KEYS];
+
+    assert.equal(
+      new Set(classified).size,
+      classified.length,
+      "a key appears in more than one classification list",
+    );
+
+    const unclassified = REQUIRED_ENV_KEYS.filter(
+      (key) => !classified.includes(key as never),
+    );
+
+    assert.deepEqual(
+      unclassified,
+      [],
+      `these keys are neither environment-specific nor shared config: ${unclassified}`,
+    );
+  });
+
+  test("every credential-shaped key is classified environment-specific", () => {
+    // A secret that defaults to "must match" would pressure a developer into
+    // sharing one credential across environments, which is the opposite of the
+    // intent of this file.
+    const misclassified = REQUIRED_ENV_KEYS.filter(
+      (key) =>
+        CREDENTIAL_KEY_PATTERN.test(key) &&
+        !ENVIRONMENT_SPECIFIC_KEYS.includes(key as never),
+    );
+
+    assert.deepEqual(
+      misclassified,
+      [],
+      `credential-shaped keys must be listed in ENVIRONMENT_SPECIFIC_KEYS so ` +
+        `separate per-environment credentials are allowed: ${misclassified}`,
+    );
+  });
+
+  test("keys expected to differ are a subset of environment-specific keys", () => {
+    const orphans = MUST_DIFFER_KEYS.filter(
+      (key) => !ENVIRONMENT_SPECIFIC_KEYS.includes(key as never),
+    );
+
+    assert.deepEqual(orphans, []);
   });
 
   test("the required-key list covers every key the codebase reads", () => {
@@ -157,7 +205,7 @@ describe("env parity - dev vs prod values", () => {
 
       const shared: string[] = [];
 
-      for (const key of SECRET_KEYS) {
+      for (const key of MUST_DIFFER_KEYS) {
         const devValue = dev.get(key);
         const prodValue = prod.get(key);
 

@@ -38,7 +38,7 @@ tests/
 ├── helpers/
 │   └── test-auth.ts                           # Shared authentication & workspace creation test helpers
 ├── unit/                                     # Node:test unit suites (no browser or server required)
-│   ├── required-env-keys.ts                   # Committed non-secret env contract (required, per-env, secret keys)
+│   ├── required-env-keys.ts                   # Committed env contract: required, per-env, shared, must-differ, credential pattern
 │   ├── ai-model.test.ts                       # AI_MODEL env resolution, fallback, blank-id guard, missing-key guard
 │   ├── ai-tasks.test.ts                       # Trigger tasks build models via aiModel(); no direct provider/key use
 │   ├── env-file.test.ts                       # NODE_ENV-based env selection, incl. no dev fallback in production
@@ -193,5 +193,6 @@ When adding new test files to this repository, adhere to the following conventio
 6. **Unit vs E2E Split**: Put module-level logic (env resolution, model config, pure helpers) in `tests/unit/*.test.ts` using `node:test` + `node:assert`. Reserve Playwright for browser and HTTP contract behavior. Never import Playwright's `expect` inside `tests/unit/`.
 7. **Fresh Module State for Env-Dependent Code**: `lib/ai-model.ts` and `lib/env-file.ts` read `process.env` at import time. Use the cache-busting dynamic import (`import(url + "?t=" + Math.random())`) so each case re-evaluates the module, and restore `process.env` in a `finally` block.
 8. **Isolated Filesystem for Env Selection Tests**: `envFilePath()` depends on which files exist in the cwd. Run each case in a fresh `mkdtemp` directory via the `inEnvDir` helper so cases cannot leak into each other.
-9. **Non-Secret Env Contracts Belong in Source**: Env files are gitignored, so required-key expectations live in `tests/unit/required-env-keys.ts` and are asserted unconditionally. Only value-level checks (which key holds which value) may skip when the real files are absent. Never write a test that fails only because two environments legitimately differ — put `DATABASE_URL` in `ENVIRONMENT_SPECIFIC_KEYS` rather than forcing both environments onto one database.
-10. **Canvas Suspense Awareness**: When testing canvas components, always wait for the canvas toolbar (`page.getByRole("toolbar", { name: /shape tools/i })`) to be visible to ensure Liveblocks client-side suspense has completed rendering.
+9. **Non-Secret Env Contracts Belong in Source**: Env files are gitignored, so required-key expectations live in `tests/unit/required-env-keys.ts` and are asserted unconditionally. Only value-level checks (which key holds which value) may skip when the real files are absent.
+10. **Never Fail a Legitimately Isolated Setup**: A parity test must not fail because two environments correctly differ — separate Clerk instances, separate databases, and per-environment API keys are all valid. Classify credentials in `ENVIRONMENT_SPECIFIC_KEYS`, and add a test asserting no credential-shaped key is left in the "must match" bucket, so the next new secret cannot reintroduce the problem. Reserve "must differ" for keys where sharing is unambiguously a bug (`MUST_DIFFER_KEYS`, e.g. a Trigger.dev dev key reused in production).
+11. **Canvas Suspense Awareness**: When testing canvas components, always wait for the canvas toolbar (`page.getByRole("toolbar", { name: /shape tools/i })`) to be visible to ensure Liveblocks client-side suspense has completed rendering.
