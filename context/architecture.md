@@ -2,16 +2,16 @@
 
 ## Stack
 
-| Layer            | Technology                | Role                                                           |
-| ---------------- | ------------------------- | -------------------------------------------------------------- |
-| Framework        | Next.js 16 + TypeScript   | Full-stack app with server/client boundaries                   |
-| UI               | Tailwind + shadcn/ui      | Component composition and styling                              |
-| Auth             | Clerk                     | User identity; `auth.protect()` on protected pages/layouts     |
-| Database         | Prisma + PostgreSQL       | Relational metadata: projects, collaborators, specs, task runs |
-| Canvas           | Liveblocks + React Flow   | Real-time collaborative canvas, presence, and cursors          |
-| Background tasks | Trigger.dev               | Durable AI generation workflows                                |
-| LLM              | Gemini (`@ai-sdk/google`) | Design (and later spec) generation inside Trigger.dev tasks    |
-| Artifact storage | Vercel Blob               | Canvas snapshots and generated Markdown specs                  |
+| Layer            | Technology                                 | Role                                                           |
+| ---------------- | ------------------------------------------ | -------------------------------------------------------------- |
+| Framework        | Next.js 16 + TypeScript                    | Full-stack app with server/client boundaries                   |
+| UI               | Tailwind + shadcn/ui                       | Component composition and styling                              |
+| Auth             | Clerk                                      | User identity; `auth.protect()` on protected pages/layouts     |
+| Database         | Prisma + PostgreSQL                        | Relational metadata: projects, collaborators, specs, task runs |
+| Canvas           | Liveblocks + React Flow                    | Real-time collaborative canvas, presence, and cursors          |
+| Background tasks | Trigger.dev                                | Durable AI generation workflows                                |
+| LLM              | OpenRouter (`@openrouter/ai-sdk-provider`) | Design (and later spec) generation inside Trigger.dev tasks    |
+| Artifact storage | Vercel Blob                                | Canvas snapshots and generated Markdown specs                  |
 
 ## System Boundaries
 
@@ -52,21 +52,21 @@
 
 - Input: user prompt, project context, and current canvas state (`readCanvasGraph`).
 - Execution: Trigger.dev task `design-agent` (`trigger/design-agent.ts`).
-- Model: Gemini 3.6 Flash via `@ai-sdk/google` and `GOOGLE_API_KEY`. `generateText` with canvas tools (`lib/design-canvas-tools.ts`); do not use `Output.object()` or OpenRouter.
+- Model: configured via `AI_MODEL` in the active env file (`.env.local` for dev, `.env.production.local` for prod), served by `@openrouter/ai-sdk-provider` with `OPENROUTER_API_KEY`. Model construction is centralized in `lib/ai-model.ts` (`aiModel()`); tasks must not read the key or build the client themselves. `generateText` with canvas tools (`lib/design-canvas-tools.ts`); do not use `Output.object()`.
 - Output: node and edge updates written into the shared Liveblocks room `flow` storage as tools run. Status messages go to feed `ai-status-feed`. Chat messages live on feed `ai-chat` and load only after the room websocket is connected so first project open still shows history. Ephemeral presence user `omniarch-ai` shows `cursor` and `thinking` until the run ends.
 
 ### Spec Generation
 
 - Input: current canvas graph (nodes, edges), chat history from the AI Architect tab, and project context (roomId = projectId).
 - Execution: durable background task via Trigger.dev (`generate-spec` task in `trigger/generate-spec.ts`).
-- Model: Gemini 3.6 Flash via `@ai-sdk/google` (`GOOGLE_GENERATIVE_AI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY`). Uses `generateText` with reasoning disabled and minimal thinking config.
+- Model: the `AI_MODEL` env var (`lib/ai-model.ts`) via `@openrouter/ai-sdk-provider` (`OPENROUTER_API_KEY`), built through `aiModel()`. Uses `generateText` with `reasoning: "none"`. Note the current `:free` model emits reasoning tokens even when reasoning is disabled upstream.
 - Processing flow:
   1. Task receives payload: `roomId`, `chatHistory`, `nodes`, `edges` (nodes/edges from client may be empty; task calls `readCanvasGraph(roomId)` to get live canvas state).
   2. Ensures Liveblocks room exists (`ensureLiveblocksRoom`).
   3. Publishes status updates to `ai-status-feed` Liveblocks feed: "Starting spec generation…", "Reading canvas graph…", "Generating technical specification…", "Saving technical specification…".
   4. Calls `readCanvasGraph(roomId)` to fetch current nodes and edges from Liveblocks storage.
   5. Constructs system prompt with structured Markdown specification format requirements (Overview, Architecture, Components, Data Flow, Interfaces, Infrastructure, Non-Functional Requirements, Assumptions & Constraints).
-  6. Sends canvas graph (nodes + edges) and chat history to Gemini as JSON in the prompt.
+  6. Sends canvas graph (nodes + edges) and chat history to the model as JSON in the prompt.
   7. On success: uploads generated Markdown to Vercel Blob at `specs/{roomId}/{specId}.md` (private, no random suffix, overwrite allowed).
   8. Creates/upserts `ProjectSpec` record in Prisma with `specId`, `projectId` (roomId), and `filePath` (Blob URL).
   9. Publishes final status "Spec generation complete" to `ai-status-feed`.

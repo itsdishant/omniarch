@@ -1,8 +1,8 @@
-import { config } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { loadEnv } from "./env-file";
 
-config({ path: ".env.local" });
+loadEnv();
 
 interface PrismaGlobal {
   prisma?: PrismaClient;

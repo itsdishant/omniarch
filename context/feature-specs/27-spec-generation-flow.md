@@ -60,14 +60,13 @@ task, token route, and run ownership tracking.
    - Publish status: "Reading canvas graph…"
    - Call `readCanvasGraph(roomId)` from `lib/canvas-flow.ts` to fetch the live canvas nodes and edges from Liveblocks storage (this is the source of truth, not the client-provided arrays)
    - Publish status: "Generating technical specification…"
-   - Initialize Gemini client via `googleClient()` helper:
-     - Reads API key from `GOOGLE_GENERATIVE_AI_API_KEY` || `GEMINI_API_KEY` || `GOOGLE_API_KEY`
+   - Build the model via `aiModel()` from `lib/ai-model.ts` (updated from the original `googleClient()` helper):
+     - Reads the API key from `OPENROUTER_API_KEY`
      - Throws `AbortTaskRunError` if no key is configured
-     - Returns `createGoogleGenerativeAI({ apiKey })`
+     - Returns `createOpenRouter({ apiKey })(process.env.AI_MODEL ?? FALLBACK_AI_MODEL)`
    - Call `generateText()` with:
-     - Model: `googleClient()("gemini-3.6-flash")`
+     - Model: `aiModel()` (resolves the `AI_MODEL` env var, with a hardcoded fallback)
      - `reasoning: "none"`
-     - Provider options: `{ google: { thinkingConfig: { thinkingLevel: "minimal", includeThoughts: false } } }`
      - System prompt: Detailed instructions for generating a technical specification in Markdown with sections: Overview, Architecture, Components, Data Flow, Interfaces, Infrastructure, Non-Functional Requirements, Assumptions & Constraints
      - Prompt: JSON stringified `{ nodes: graph.nodes, edges: graph.edges }` and `chatHistory`
    - Publish status: "Saving technical specification…"
@@ -95,7 +94,7 @@ task, token route, and run ownership tracking.
 - Use Prisma for `TaskRun` persistence (`createTaskRun`, `findOwnedTaskRun` in `lib/task-runs.ts`)
 - Project access must come from the authenticated user + `roomId`
 - Keep the task output as plain Markdown
-- Reuse existing auth, Prisma, Trigger.dev, and Gemini patterns
+- Reuse existing auth, Prisma, and Trigger.dev patterns
 - The `nodes` and `edges` in the trigger payload can be empty — the task reads the live canvas via `readCanvasGraph`
 - Realtime status updates use the `ai-status-feed` Liveblocks feed (same feed used by design agent)
 

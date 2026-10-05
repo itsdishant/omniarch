@@ -14,6 +14,13 @@
 - Platform First: Check native libraries, standard runtimes, and built-in browser/platform capabilities before writing custom components.
 - Boring over Clever: Choose straightforward, readable implementations instead of complex, clever design patterns.
 
+## Testing
+
+- Unit tests live in `tests/unit/*.test.ts` and run on Node's built-in test runner (`npm run test:unit`); no browser, server, or credentials. E2E tests use Playwright (`npm run test:e2e`) for browser and HTTP contract behavior. `npm test` runs both.
+- Never import Playwright's `expect` inside `tests/unit/`. Use `node:test` + `node:assert/strict`.
+- Modules that read `process.env` at import time must be re-imported per case with a cache-busting query so the value is re-evaluated; restore env in `finally`.
+- Tests that depend on which env files exist must run in a throwaway `mkdtemp` cwd so cases cannot leak into each other.
+
 ## TypeScript
 
 - Strict mode is required throughout the project.
@@ -65,7 +72,9 @@
 ## AI tasks
 
 - Long-running generation belongs in `trigger/`, not route handlers.
-- Design generation uses Gemini through `@ai-sdk/google` (`GOOGLE_API_KEY`).
+- Design generation uses OpenRouter through `@openrouter/ai-sdk-provider` (`OPENROUTER_API_KEY`). Always build the model via `aiModel()` from `lib/ai-model.ts`; never read the API key or construct a provider inside a task.
+- `aiModel()` guards its inputs: a missing key or blank model id throws `AbortTaskRunError` rather than reaching the provider. `AI_MODEL` falls back to the bundled default when unset, empty, or whitespace-only.
+- Environment selection goes through `loadEnv()` in `lib/env-file.ts` for code outside the Next server (Prisma CLI). Under `NODE_ENV=production` it must never fall back to `.env.local`, or a production migration could run against the development database. Playwright's global setup/teardown intentionally read `.env.local` to keep E2E on development credentials.
 - Canvas mutations from the design agent use `generateText` tools in `lib/design-canvas-tools.ts`, then Liveblocks `mutateStorage` on `flow`. Do not use `Output.object()` or a second LLM provider.
 - Shared AI status uses Liveblocks feed `ai-status-feed`. Ephemeral AI presence uses `setPresence` with user id `omniarch-ai`.
 - Architect chat history uses Liveblocks feed `ai-chat`. Subscribe only after the room is connected (`AiChatReady`). UI clocks are 12-hour. Local Trigger.dev runs require `npm run dev:trigger` in addition to `npm run dev`.

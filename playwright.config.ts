@@ -26,6 +26,8 @@ const webServerCommand =
 
 export default defineConfig({
   testDir: "./tests",
+  // Node:test unit suites run via `npm run test:unit`, not Playwright.
+  testIgnore: "**/unit/**",
   fullyParallel: true,
   workers: 2,
   reporter: [["html", { open: "never" }], ["list"]],

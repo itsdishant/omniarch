@@ -18,7 +18,7 @@ on the collaborative canvas, with visible AI presence and status.
      new ones
 
    Then implement:
-   - use Gemini (`@ai-sdk/google`) to interpret the user prompt
+   - use the LLM (now OpenRouter via `aiModel()`) to interpret the user prompt
      via `generateText` tools (not `Output.object()`):
      `addNode`, `moveNode`, `resizeNode`, `updateNodeData`,
      `deleteNode`, `addEdge`, `deleteEdge`
@@ -49,8 +49,7 @@ on the collaborative canvas, with visible AI presence and status.
 
 ## Dependencies
 
-All packages are already installed. `GOOGLE_API_KEY` is already in
-`.env.local` (used by `@ai-sdk/google`). Do not add OpenRouter.
+All packages are already installed. **Updated:** the LLM provider was later swapped to OpenRouter — `OPENROUTER_API_KEY` is in `.env.local` and the model is built via `aiModel()` in `lib/ai-model.ts` (`@openrouter/ai-sdk-provider`). `@ai-sdk/google` has been removed.
 
 ## Scope Limits
 
