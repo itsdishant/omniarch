@@ -106,7 +106,7 @@ describe("ai-model - aiModel()", () => {
   });
 
   test("throws AbortTaskRunError when OPENROUTER_API_KEY is missing", async () => {
-    setEnv({ OPENROUTER_API_KEY: undefined });
+    setEnv({ OPENROUTER_API_KEY: undefined, TRIGGER_DEPLOYMENT_ID: undefined });
     try {
       const { aiModel } = await loadModule();
 
@@ -116,6 +116,58 @@ describe("ai-model - aiModel()", () => {
           assert.ok(error instanceof Error);
           assert.equal(error.name, "AbortTaskRunError");
           assert.match(error.message, /OPENROUTER_API_KEY/);
+          return true;
+        },
+      );
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  test("names the environment so prod-only drift is diagnosable", async () => {
+    // The key lives in .env files locally and in the Trigger.dev dashboard for
+    // deployed runs, and `trigger deploy` does not sync them. A message that
+    // only said "missing key" hid that the cloud env was the stale side.
+    for (const [deploymentId, expected] of [
+      ["dep_123", "cloud"],
+      [undefined, "local"],
+    ] as const) {
+      setEnv({
+        OPENROUTER_API_KEY: undefined,
+        TRIGGER_DEPLOYMENT_ID: deploymentId,
+      });
+      try {
+        const { aiModel } = await loadModule();
+
+        assert.throws(
+          () => aiModel(),
+          (error: unknown) => {
+            assert.ok(error instanceof Error);
+            assert.match(
+              error.message,
+              new RegExp(`in the ${expected} environment`),
+              `TRIGGER_DEPLOYMENT_ID=${deploymentId} should report "${expected}"`,
+            );
+            return true;
+          },
+        );
+      } finally {
+        restoreEnv();
+      }
+    }
+  });
+
+  test("the error never leaks a credential value", async () => {
+    setEnv({ OPENROUTER_API_KEY: "  ", TRIGGER_DEPLOYMENT_ID: "dep_123" });
+    try {
+      const { aiModel } = await loadModule();
+
+      assert.throws(
+        () => aiModel(),
+        (error: unknown) => {
+          assert.ok(error instanceof Error);
+          assert.doesNotMatch(error.message, /sk-or-v1/);
+          assert.doesNotMatch(error.message, /dep_123/);
           return true;
         },
       );

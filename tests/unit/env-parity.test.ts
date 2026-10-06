@@ -145,8 +145,11 @@ describe("env parity - required keys", () => {
       }
     }
 
-    // NODE_ENV is set by the runtime, not read from a file.
+    // Injected by the runtime, not read from a file: NODE_ENV by Node/Next,
+    // TRIGGER_DEPLOYMENT_ID by the Trigger.dev task runtime. They are never
+    // expected in .env files, so they are not part of the configured contract.
     referenced.delete("NODE_ENV");
+    referenced.delete("TRIGGER_DEPLOYMENT_ID");
 
     const unlisted = [...referenced].filter(
       (key) => !REQUIRED_ENV_KEYS.includes(key as never),
